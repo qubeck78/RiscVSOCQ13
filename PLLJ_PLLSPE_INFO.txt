@@ -1,0 +1,10 @@
+PLL_Name	gfxPll:gfxPllInst|altpll:altpll_component|gfxPll_altpll:auto_generated|pll1
+PLLJITTER	26
+PLLSPEmax	84
+PLLSPEmin	-53
+
+PLL_Name	mainPll:mainPllInst|altpll:altpll_component|mainPll_altpll:auto_generated|pll1
+PLLJITTER	30
+PLLSPEmax	84
+PLLSPEmin	-53
+

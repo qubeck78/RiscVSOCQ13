@@ -1,0 +1,3605 @@
+
+library ieee;
+use ieee.std_logic_1164.all;
+use IEEE.std_logic_arith.all;
+use IEEE.std_logic_unsigned.all;
+
+library altera_mf;
+use altera_mf.altera_mf_components.all;
+
+--https://www.waveshare.com/wiki/CoreEP3C16
+
+--nceo pin used as io (pin 162, ga7)
+--assignments/device/device and pin options/dual purpose pins
+--multicycle paths
+--https://github.com/ijor/fx68k/blob/master/fx68k.txt
+
+
+--creating timing constraints
+--https://www.youtube.com/watch?v=SpKAg3JJOs8
+
+--https://community.intel.com/t5/FPGA/ct-p/fpga
+--https://community.intel.com/t5/Intel-Quartus-Prime-Software/How-to-improve-Fmax-for-SOPC-System/td-p/46478
+
+--https://github.com/YosysHQ/picorv32
+--https://github.com/YosysHQ/nerv/blob/main/firmware.s
+
+
+--to enable IP components parameter editor
+--go to Tools -> Options -> Libraries -> add project directory under "Project Libraries". 
+
+
+entity C4RiscVSOCTop is
+port(
+	
+	--onboard peripherals
+	
+	--clock
+	core_board_clk_50:	in std_logic;
+	
+	--reset
+	core_board_reset:		in std_logic;
+	
+	--user key
+	core_board_key:		in std_logic;
+	
+	
+	--leds
+	core_board_leds:		out std_logic_vector( 1 downto 0 );
+	
+	--sdram
+	sd1_a:					out std_logic_vector( 12 downto 0 );
+	sd1_ba:					out std_logic_vector( 1 downto 0 );
+	
+	sd1_cke:					out std_logic;
+	sd1_clk:					out std_logic;
+	
+	sd1_dqml:				out std_logic;
+	sd1_dqmh:				out std_logic;
+	
+	sd1_cas:					out std_logic;
+	sd1_ras:					out std_logic;
+	
+	sd1_wen:					out std_logic;
+	sd1_csn:					out std_logic;
+	
+	sd1_d:					inout std_logic_vector( 15 downto 0 );
+	
+	
+	
+	--base board peripherals
+	
+	--vga
+	red:   out std_logic_vector( 4 downto 0 );
+	green: out std_logic_vector( 4 downto 0 );
+	blue:  out std_logic_vector( 4 downto 0 );
+	vsync: out std_logic;
+	hsync: out std_logic;
+	
+	--ext uart
+	extUartTx:	out	std_logic;
+	extUartRx:	in		std_logic;
+	
+	--sd card
+	sdMciDat:	inout	std_logic_vector( 3 downto 0 );	
+	sdMciCmd:	out 	std_logic;	
+	sdMciClk:	out 	std_logic;	
+	
+	--graphics sram
+	gds0_7n:		out 	std_logic;
+	gds8_15n:	out 	std_logic;
+	gds16_23n:	out 	std_logic;
+	gds24_31n:	out 	std_logic;
+		
+	gwen:			out	std_logic;
+	goen:			out	std_logic;
+
+	ga:			out 	std_logic_vector( 20 downto 0 );
+	gd:			inout std_logic_vector( 31 downto 0 )
+	
+	
+	
+	
+);
+end C4RiscVSOCTop;
+
+
+architecture behavior of C4RiscVSOCTop is
+
+
+--	components
+
+-- main pll
+component mainPll IS
+	PORT
+	(
+		areset		: IN STD_LOGIC  := '0';
+		inclk0		: IN STD_LOGIC  := '0';
+		c0				: OUT STD_LOGIC ;				
+		c1				: OUT STD_LOGIC ;
+		c2				: OUT STD_LOGIC ;
+		c3				: OUT STD_LOGIC ;
+		c4				: OUT STD_LOGIC ;
+		locked		: OUT STD_LOGIC 
+	);
+END component;
+
+-- font prom
+component fontProm IS
+	PORT
+	(
+		address		: IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+		clock			: IN STD_LOGIC  := '1';
+		q				: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+	);
+END component;
+
+
+--video ram h and l
+
+component videoRamH IS
+	PORT
+	(
+		clock_a		: IN STD_LOGIC  := '1';
+		address_a	: IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+		data_a		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		wren_a		: IN STD_LOGIC  := '0';
+		q_a			: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
+
+		clock_b		: IN STD_LOGIC ;
+		address_b	: IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+		data_b		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		wren_b		: IN STD_LOGIC  := '0';
+		q_b			: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+	);
+END component;
+
+component videoRamL IS
+	PORT
+	(
+		clock_a		: IN STD_LOGIC  := '1';
+		address_a	: IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+		data_a		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		wren_a		: IN STD_LOGIC  := '0';
+		q_a			: OUT STD_LOGIC_VECTOR (7 DOWNTO 0);
+
+		clock_b		: IN STD_LOGIC ;
+		address_b	: IN STD_LOGIC_VECTOR (10 DOWNTO 0);
+		data_b		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+		wren_b		: IN STD_LOGIC  := '0';
+		q_b			: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+	);
+END component;
+
+-- gfx pixel gen buffer ram
+
+component gfxBufRam IS
+	PORT
+	(
+		data			: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+		rdaddress	: IN STD_LOGIC_VECTOR (8 DOWNTO 0);
+		rdclock		: IN STD_LOGIC;
+		wraddress	: IN STD_LOGIC_VECTOR (8 DOWNTO 0);
+		wrclock		: IN STD_LOGIC  := '1';
+		wren			: IN STD_LOGIC  := '0';
+		q				: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
+	);
+END component;
+
+
+
+
+-- text mode pixel and sync gen
+
+component pixelGenTxt
+    port(
+        --reset
+        reset:          in  std_logic;
+        pgClock:        in  std_logic;
+        pgVSync:        out std_logic;
+        pgHSync:        out std_logic;
+        pgDe:           out std_logic;
+        pgR:            out std_logic_vector( 7 downto 0 );
+        pgG:            out std_logic_vector( 7 downto 0 );
+        pgB:            out std_logic_vector( 7 downto 0 );
+
+        fontRomA:       out std_logic_vector( 10 downto 0 );
+        fontRomDout:    in  std_logic_vector( 7 downto 0 );
+
+        videoRamBA:     out std_logic_vector( 10 downto 0 );
+        videoRamBDout:  in  std_logic_vector( 15 downto 0 );
+		  
+		  pgXCount:		   out std_logic_vector( 11 downto 0 );
+		  pgYCount:		   out std_logic_vector( 11 downto 0 );
+		  pgDeX:          out std_logic;
+		  pgDeY:          out std_logic;
+		  pgPreFetchLine: out std_logic;
+		  pgFetchEnable:  out std_logic
+    );
+end component;
+
+-- gfx pixel gen
+
+component pixelGenGfx is
+port(
+	reset:          	in  std_logic;
+   pggClock:        	in  std_logic;
+   pggR:            	out std_logic_vector( 7 downto 0 );
+   pggG:            	out std_logic_vector( 7 downto 0 );
+   pggB:            	out std_logic_vector( 7 downto 0 );
+
+	 --gfx buffer ram
+	gfxBufRamDOut:		in  std_logic_vector( 31 downto 0 );
+	gfxBufRamRdA:		out std_logic_vector( 8 downto 0 );
+
+	--2 dma requests
+	pggDMARequest:		out std_logic_vector( 1 downto 0 );
+	
+	--sync gen outputs
+   pgVSync:        	in  std_logic;
+   pgHSync:        	in  std_logic;
+   pgDe:           	in  std_logic;
+	pgXCount:		  	in  std_logic_vector( 11 downto 0 );
+	pgYCount:		  	in  std_logic_vector( 11 downto 0 );
+	pgDeX:          	in  std_logic;
+	pgDeY:          	in  std_logic;
+	pgPreFetchLine:	in  std_logic;
+	pgFetchEnable:  	in  std_logic;
+
+	pgVideoMode:		in	 std_logic_vector( 1 downto 0 )
+
+	);
+end component;
+
+
+-- riscv cpu
+
+component picorv32 is	
+	port
+	(
+		clk:				in  std_logic;
+		resetn:			in  std_logic;
+		trap:				out std_logic;
+		mem_valid:		out std_logic;
+		mem_instr:		out std_logic;
+		mem_ready:		in  std_logic;
+
+		mem_addr:		out std_logic_vector( 31 downto 0 );
+		mem_wdata:		out std_logic_vector( 31 downto 0 );
+		mem_wstrb:		out std_logic_vector( 3 downto 0 );
+		mem_rdata:		in  std_logic_vector( 31 downto 0 );
+
+		--Look-Ahead Interface
+		mem_la_read: 	out std_logic;
+		mem_la_write:	out std_logic;
+		mem_la_addr:	out std_logic_vector( 31 downto 0 );
+		mem_la_wdata:	out std_logic_vector( 31 downto 0 );
+		mem_la_wstrb:	out std_logic_vector( 3 downto 0 );
+
+		--Pico Co-Processor Interface (PCPI)
+		pcpi_valid:		out std_logic;
+		pcpi_insn:		out std_logic_vector( 31 downto 0 );
+		pcpi_rs1:		out std_logic_vector( 31 downto 0 );
+		pcpi_rs2:		out std_logic_vector( 31 downto 0 );
+		pcpi_wr:			in  std_logic;
+		pcpi_rd:			in  std_logic_vector( 31 downto 0 );
+		pcpi_wait:		in  std_logic;
+		pcpi_ready:		in  std_logic;
+
+		--IRQ Interface
+		irq:				in  std_logic_vector( 31 downto 0 );
+		eoi:				out std_logic_vector( 31 downto 0 );
+
+		--Trace Interface
+		trace_valid:	out std_logic;
+		trace_data:		out std_logic_vector( 35 downto 0 )
+
+);
+end component;
+
+-- simple UART
+
+component simpleUART
+    port(
+        reset:                          in  std_logic;
+        clock:                          in  std_logic;
+
+        uartTXD:                        out std_logic;
+        uartRXD:                        in  std_logic;
+
+        dataSenderReady:                out std_logic;
+        dataToSend:                     in  std_logic_vector( 7 downto 0 );
+        dataToSendStrobe:               in  std_logic;
+
+        dataReceivedReady:              out std_logic;
+        dataReceived:                   out std_logic_vector( 7 downto 0 );
+        dataReceivedReadAcknowledge:    in  std_logic
+    );
+end component;
+
+-- simple SPI
+component simpleSPI is
+port(
+
+	reset:                          	in  std_logic;
+	clock:                          	in  std_logic;
+
+	sclk:										out std_logic;
+	mosi:										out std_logic;
+	miso:										in  std_logic;
+	
+	spiReady:                			out std_logic;
+   dataToSend:                     	in  std_logic_vector( 7 downto 0 );
+   dataReceived:                   	out std_logic_vector( 7 downto 0 );
+   dataToSendStrobe:               	in  std_logic
+
+);
+end component;
+
+
+-- system RAM ( bootloader and stack )
+
+component systemRam IS
+	PORT
+	(
+		address_a		: IN STD_LOGIC_VECTOR (12 DOWNTO 0);
+		address_b		: IN STD_LOGIC_VECTOR (12 DOWNTO 0);
+		byteena_a		: IN STD_LOGIC_VECTOR (3 DOWNTO 0) :=  (OTHERS => '1');
+		byteena_b		: IN STD_LOGIC_VECTOR (3 DOWNTO 0) :=  (OTHERS => '1');
+		clock_a			: IN STD_LOGIC  := '1';
+		clock_b			: IN STD_LOGIC ;
+		data_a			: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+		data_b			: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+		wren_a			: IN STD_LOGIC  := '0';
+		wren_b			: IN STD_LOGIC  := '0';
+		q_a				: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
+		q_b				: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
+	);
+END component;
+
+
+-- pixel alpha channel calculator
+
+component pixelAlpha is
+port(
+	--reset
+	 reset:                          in  std_logic;
+    clock:                          in  std_logic;
+	 	 
+	 colorInA:								in  std_logic_vector( 15 downto 0 );
+	 colorInB:								in  std_logic_vector( 15 downto 0 );
+	 alpha:									in  std_logic_vector( 4 downto 0 );
+	 colorOut:								out std_logic_vector( 15 downto 0 )
+);
+end component;
+
+
+
+
+--signals
+
+--active high async reset
+
+signal	reset:		std_logic;
+
+--pll
+signal	pllLocked:	std_logic;
+
+--global clocks
+signal	clk25:		std_logic;
+signal	clk50:		std_logic;
+signal	clk100:		std_logic;
+signal	clk200:		std_logic;
+signal	clk75:		std_logic;
+
+--txt pixel gen signals
+signal  pgClock:    		std_logic;
+signal  pgVSync:    		std_logic;
+signal  pgHSync:    		std_logic;
+signal  pgDe:       		std_logic;
+signal  pgR:        		std_logic_vector( 7 downto 0 );
+signal  pgG:        		std_logic_vector( 7 downto 0 );
+signal  pgB:       	 	std_logic_vector( 7 downto 0 ); 
+signal  pgXCount:			std_logic_vector( 11 downto 0 );
+signal  pgYCount:			std_logic_vector( 11 downto 0 );
+signal  pgDeX:				std_logic;
+signal  pgDeY:				std_logic;
+signal  pgPreFetchLine:	std_logic;
+signal  pgFetchEnable:	std_logic;
+
+--gfx pixel gen signals
+signal  pggR:        	std_logic_vector( 7 downto 0 );
+signal  pggG:        	std_logic_vector( 7 downto 0 );
+signal  pggB:        	std_logic_vector( 7 downto 0 ); 
+signal  pggDMARequest:	std_logic_vector( 1 downto 0 );
+
+
+--font rom signals
+signal fontRomA:        std_logic_vector( 10 downto 0 );
+signal fontRomDout:     std_logic_vector( 7 downto 0 );
+
+
+--video ram (both H and L ), port B signals
+signal videoRamBDout:   std_logic_vector( 15 downto 0 );
+signal videoRamBA:      std_logic_vector( 10 downto 0 );
+
+--video ram L port A signals
+signal videoRamLACpuCe:     std_logic;
+signal videoRamLADout:      std_logic_vector( 7 downto 0 );
+
+--video ram H port A signals
+signal videoRamHACpuCe:     std_logic;
+signal videoRamHADout:      std_logic_vector( 7 downto 0 );
+
+
+--gfx pixel gen buf ram signals
+signal gfxBufRamDIn:		std_logic_vector( 31 downto 0 );
+signal gfxBufRamWrA:		std_logic_vector( 8 downto 0 );
+signal gfxBufRamWe:		std_logic;
+
+signal gfxBufRamDOut:	std_logic_vector( 31 downto 0 );
+signal gfxBufRamRdA:		std_logic_vector( 8 downto 0 );
+
+
+--simple uart signals
+signal uartClock:							std_logic;
+signal suTxd:                       std_logic;
+signal suRxd:                       std_logic;
+
+signal suDataSenderReady:           std_logic;
+signal suDataToSendStrobe:          std_logic;
+signal suDataReceivedReady:         std_logic;
+signal suDataReceived:              std_logic_vector( 7 downto 0 );
+signal suDataReceivedAcknowlegde:   std_logic;
+
+--system ram signals
+signal systemRamDoutForCPU:			std_logic_vector( 31 downto 0 );
+signal systemRAMCE:						std_logic;
+
+--cpu signals
+signal cpuClock:        std_logic;
+signal cpuResetn:			std_logic;
+signal cpuAOut:         std_logic_vector( 29 downto 0 );
+signal cpuDOut:         std_logic_vector( 31 downto 0 );
+
+signal cpuMemValid:		std_logic;
+signal cpuMemInstr:		std_logic; 
+signal cpuMemReady:		std_logic;
+signal cpuAOutFull:		std_logic_vector( 31 downto 0 );
+signal cpuWrStrobe:		std_logic_vector( 3 downto 0 );
+signal cpuDin:				std_logic_vector( 31 downto 0 );
+
+signal cpuWr:				std_logic;
+signal cpuDataMask:		std_logic_vector( 3 downto 0 );
+
+signal cpuDmaClock:		std_logic;
+		
+--cpu dma fsm signals
+type cpuDmaState_T is ( cpuDmaIdle, cpuDmaWait1, cpuDmaWaitForBusy, cpuDmaWaitForReady, cpuDmaReportReady );
+signal cpuDmaState:	cpuDmaState_T;
+
+
+
+-- system ram, videoramh and l port a clock
+signal fpgaCpuMemoryClock:	std_logic;
+
+
+--simple SPI signals
+signal spiClock:					std_logic;
+
+signal spiReady:					std_logic;
+signal spiDataReceived:			std_logic_vector( 7 downto 0 );
+signal spiDataToSendStrobe:	std_logic;
+signal spiSClk:					std_logic;
+signal spiMOSI:					std_logic;
+signal spiMISO:					std_logic;
+
+--gpo signals
+signal gpoRegister:				std_logic_vector( 7 downto 0 );
+
+
+--registers signals
+signal registersClock:					std_logic;
+signal registersCE:						std_logic;
+signal registersDoutForCPU:			std_logic_vector( 31 downto 0 );
+
+--video mux signals
+signal vmMode:								std_logic_vector( 15 downto 0 );
+
+--dma process signals
+signal dmaClock:					std_logic;
+signal cpuDmaMemoryReady:		std_logic;
+signal dmaMemoryCE:				std_logic;
+
+signal cpuDMARequest:			std_logic;
+signal cpuDmaReady:				std_logic;
+
+signal dmaReady:					std_logic_vector( 3 downto 0 );
+signal dmaRequest:				std_logic_vector( 3 downto 0 );
+signal dmaRequestReg:			std_logic_vector( 3 downto 0 );
+signal dmaDoutForCpu:			std_logic_vector( 31 downto 0 );
+
+type dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
+							dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3, dmaCpuWrite4,
+							dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4,
+							dmaCh2Write0, dmaCh2Write1, dmaCh2Write2, dmaCh2Write3, dmaCh2Write4,
+							dmaCh2Read0, dmaCh2Read1, dmaCh2Read2, dmaCh2Read3, dmaCh2Read4,
+							dmaCh2Write32_0, dmaCh2Write32_1, dmaCh2Write32_2, dmaCh2Write32_3, dmaCh2Write32_4,
+							dmaCh2Read32_0, dmaCh2Read32_1, dmaCh2Read32_2, dmaCh2Read32_3, dmaCh2Read32_4					
+					);
+							
+signal dmaState:						dmaState_T;
+
+signal dmaTransferCounter:			std_logic_vector( 7 downto 0 );
+
+signal dmaDisplayPointer:			std_logic_vector( 18 downto 0 );
+signal dmaDisplayBufferPointer:	std_logic_vector( 8 downto 0 );
+--screen address register
+signal dmaDisplayPointerStart:	std_logic_vector( 18 downto 0 );
+
+--dma ch2 signals
+signal dmaCh2RWn:						std_logic;
+signal dmaCh2Din:						std_logic_vector( 31 downto 0 );
+signal dmaCh2Dout:					std_logic_vector( 31 downto 0 );
+signal dmaCh2A:						std_logic_vector( 19 downto 0 );
+signal dmaCh2TransferSize:			std_logic;
+signal dmaCh2TransferMask:			std_logic_vector( 1 downto 0 );
+
+
+--tick timer signals
+signal tickTimerClock:					std_logic;
+signal tickTimerReset:					std_logic;
+signal tickTimerPrescalerCounter:	std_logic_vector( 31 downto 0 );
+signal tickTimerCounter:				std_logic_vector( 31 downto 0 );
+
+constant tickTimerPrescalerValue:	integer:=	50000 - 1;	--1ms tick timer
+
+--gouraud edge computation components signals
+signal c0Clock:	std_logic;
+
+signal c0CX:		std_logic_vector( 15 downto 0 );
+signal c0CY:		std_logic_vector( 15 downto 0 );
+signal c0CZ:		std_logic_vector( 15 downto 0 );
+
+signal c0BX:		std_logic_vector( 15 downto 0 );
+signal c0BY:		std_logic_vector( 15 downto 0 );
+signal c0BZ:		std_logic_vector( 15 downto 0 );
+	 
+signal c0AX:		std_logic_vector( 15 downto 0 );
+signal c0AY:		std_logic_vector( 15 downto 0 );
+signal c0AZ:		std_logic_vector( 15 downto 0 );
+
+signal c0Px:		std_logic_vector( 15 downto 0 );
+signal c0PxReg:		std_logic_vector( 15 downto 0 );
+signal c0Py:		std_logic_vector( 15 downto 0 );
+signal c0PyReg:		std_logic_vector( 15 downto 0 );
+
+signal c0EdgeEBA:	std_logic_vector( 31 downto 0 );
+signal c0EdgeECB:	std_logic_vector( 31 downto 0 );
+signal c0EdgeEAC:	std_logic_vector( 31 downto 0 );
+
+signal c0Area:		std_logic_vector( 31 downto 0 );
+
+signal c0wba:		std_logic_vector( 31 downto 0 );
+signal c0wcb:		std_logic_vector( 31 downto 0 );
+signal c0wac:		std_logic_vector( 31 downto 0 );
+
+signal c0it0A:		std_logic_vector( 7 downto 0 );
+signal c0it0B:		std_logic_vector( 7 downto 0 );
+signal c0it0C:		std_logic_vector( 7 downto 0 );
+signal c0it0Out:	std_logic_vector( 7 downto 0 );
+
+signal c0it1A:		std_logic_vector( 7 downto 0 );
+signal c0it1B:		std_logic_vector( 7 downto 0 );
+signal c0it1C:		std_logic_vector( 7 downto 0 );
+signal c0it1Out:	std_logic_vector( 7 downto 0 );
+
+signal c0it2A:		std_logic_vector( 7 downto 0 );
+signal c0it2B:		std_logic_vector( 7 downto 0 );
+signal c0it2C:		std_logic_vector( 7 downto 0 );
+signal c0it2Out:	std_logic_vector( 7 downto 0 );
+
+signal c0itZout:	std_logic_vector( 15 downto 0 );
+signal c0itZoutLatched:	std_logic_vector( 15 downto 0 );
+
+--blitter signals
+signal bltClock:					std_logic;
+
+signal bltDMARequest:			std_logic;
+signal bltDMAReady:				std_logic;
+
+signal bltReady:					std_logic;
+signal bltRun:						std_logic;
+
+signal bltConfig0Reg:			std_logic_vector( 31 downto 0 );
+
+signal bltValueReg:				std_logic_vector( 31 downto 0 );
+
+signal bltSrcAddressReg:		std_logic_vector( 19 downto 0 );
+signal bltSrcAddress:			std_logic_vector( 19 downto 0 );
+signal bltSrcAddress2:			std_logic_vector( 19 downto 0 );
+
+signal bltSrcModuloReg:			std_logic_vector( 15 downto 0 );
+signal bltSrcModulo2:			std_logic_vector( 15 downto 0 );
+
+signal bltDestAddressReg:		std_logic_vector( 19 downto 0 );
+signal bltDestAddress:			std_logic_vector( 19 downto 0 );
+
+signal bltDestModuloReg:		std_logic_vector( 15 downto 0 );
+
+signal bltTransferWidthReg:	std_logic_vector( 15 downto 0 );
+signal bltTransferHeightReg:	std_logic_vector( 8 downto 0 );
+
+signal bltAccumulator:			std_logic_vector( 31 downto 0 );
+signal bltTransferCounterX:	std_logic_vector( 15 downto 0);
+signal bltTransferCounterY:	std_logic_vector( 8 downto 0);
+
+--bounding box calc
+type bboxState_t is ( bbstReady, bbst1, bbst2, bbst3, bbst4, bbst5 );
+signal bboxState:					bboxState_t;
+
+signal axUs:	std_logic_vector( 15 downto 0 );
+signal ayUs:	std_logic_vector( 15 downto 0 );
+
+signal bxUs:	std_logic_vector( 15 downto 0 );
+signal byUs:	std_logic_vector( 15 downto 0 );
+
+signal cxUs:	std_logic_vector( 15 downto 0 );
+signal cyUs:	std_logic_vector( 15 downto 0 );
+
+--trigger bounding box calculation ( by writting bltConfig0 reg )
+
+signal bboxRunCalc:				std_logic;
+
+signal bltGouraudXminReg:		std_logic_vector( 15 downto 0 );
+signal bltGouraudYminReg:		std_logic_vector( 15 downto 0 );
+signal bltGouraudXmaxReg:		std_logic_vector( 15 downto 0 );
+signal bltGouraudYmaxReg:		std_logic_vector( 15 downto 0 );
+
+signal bltGouraudZBufferAddressReg:		std_logic_vector( 19 downto 0 );
+signal bltGouraudZBufferAddress:			std_logic_vector( 19 downto 0 );
+
+signal bltAlphaReg:				std_logic_vector( 15 downto 0 );
+
+
+signal bltYOffset:				std_logic_vector( 31 downto 0 );
+
+signal bltInsideTriangleFlag:	std_logic;
+
+type bltState_t is ( bltStIdle, bltStWriteSignleVal0,  bltStWriteSignleVal1, bltStWriteSignleVal2, bltStWriteSignleVal3,
+							bltStCopy0, bltStCopy1, bltStCopy2, bltStCopy3, bltStCopy4, bltStCopy5, bltStCopy6,
+							bltStGouraud0, bltStGouraud1, bltStGouraud2, bltStGouraud3, bltStGouraud4, bltStGouraud5, bltStGouraud6, bltStGouraud7,
+							bltStGouraud8, bltStGouraud9, bltStGouraud10, bltStGouraud11, bltStGouraud12,
+							bltStSubWrite0, bltStSubWrite1, bltStSubWrite2, bltStSubWrite3,
+							bltStSubRead0, bltStSubRead1, bltStSubRead2, bltStSubRead3,
+							bltStSubRead2_0,
+							
+							bltStSubWriteWithZBuf0, bltStSubWriteWithZBuf1, bltStSubWriteWithZBuf2, bltStSubWriteWithZBuf3, bltStSubWriteWithZBuf4
+							
+						 );
+
+signal bltState:				bltState_t;
+signal bltReturnState:		bltState_t;
+
+
+--texture shader signals
+signal txtShaderClock:		std_logic;
+signal txtShaderColorIn:	std_logic_vector( 15 downto 0 );
+signal txtShaderLightIn:	std_logic_vector( 4 downto 0 );
+signal txtShaderColorOut:	std_logic_vector( 15 downto 0 );
+	 
+	 
+--pixel alpha signals
+signal pixAlphaClock:		std_logic;
+signal pixAlphaColorInA:	std_logic_vector( 15 downto 0 );
+signal pixAlphaColorInB:	std_logic_vector( 15 downto 0 );
+signal pixAlphaAlpha:		std_logic_vector( 4 downto 0 );
+signal pixAlphaColorOut:	std_logic_vector( 15 downto 0 );
+
+--fpmult signals
+signal fpmultClock:			std_logic;
+signal fpmult0DataA:			std_logic_vector(31 downto 0);
+signal fpmult0DataB:			std_logic_vector(31 downto 0);
+signal fpmult0Result:		std_logic_vector(31 downto 0);
+
+--fpadd signals
+signal fpaddClock:			std_logic;
+signal fpadd0DataA:			std_logic_vector(31 downto 0);
+signal fpadd0DataB:			std_logic_vector(31 downto 0);
+signal fpadd0Result:			std_logic_vector(31 downto 0);
+
+--fpsub signals
+signal fpsubClock:			std_logic;
+signal fpsub0DataA:			std_logic_vector(31 downto 0);
+signal fpsub0DataB:			std_logic_vector(31 downto 0);
+signal fpsub0Result:			std_logic_vector(31 downto 0);
+
+--fpdiv signals
+signal fpdivClock:			std_logic;
+signal fpdiv0DataA:			std_logic_vector(31 downto 0);
+signal fpdiv0DataB:			std_logic_vector(31 downto 0);
+signal fpdiv0Result:			std_logic_vector(31 downto 0);
+
+
+--frameTimer signals
+signal frameTimerClock:		std_logic;
+signal frameTimerReset:		std_logic;
+signal frameTimerPgPrvVSync:	std_logic;
+signal frameTimerValue:		std_logic_vector( 31 downto 0 );
+
+
+begin
+
+
+-- async reset signals 
+
+	reset			<= not pllLocked;
+	cpuResetn	<= core_board_key and pllLocked;
+
+-- place main pll
+
+mainPllInst: mainPll
+	port map
+	(
+		areset	=> not core_board_reset,
+		inclk0	=> core_board_clk_50,
+		c0			=> clk25,
+		c1			=> clk50,
+		c2			=> clk100,
+		c3			=> clk200,
+		c4			=> clk75,
+		locked	=> pllLocked
+	
+	);
+
+
+-- 
+	
+	
+-- config io for sdram ( no controller for now )
+
+	sd1_a		<= ( others => '0' );
+	sd1_ba	<= ( others => '0' );
+	
+	sd1_cke	<= '0';
+	sd1_clk	<= '0';
+	
+	sd1_dqml	<= '1';
+	sd1_dqmh	<= '1';
+	
+	sd1_cas	<= '1';
+	sd1_ras	<= '1';
+	
+	sd1_wen	<= '1';
+	sd1_csn	<= '1';
+	
+	sd1_d		<= ( others => 'Z' );
+	
+	
+
+	
+	
+-- clock config
+
+-- txt pixel gen clock
+	pgClock					<= clk25;
+
+-- pixel alpha channel calculator clock
+	pixAlphaClock			<= clk100;
+	
+
+-- uart clock
+	uartClock				<= cpuClock;
+
+-- cpu clock
+	cpuClock					<= clk50;
+	
+-- cpu <-> dma interface clock
+	cpuDmaClock				<= clk100;
+	
+
+-- fpga cpu memory clock ( system RAM, videoRamL and H )
+	fpgaCpuMemoryClock	<= not cpuClock;
+	
+-- registers process clock
+	registersClock			<= clk100;
+	
+-- sram direct memory access process clock
+	dmaClock					<= clk100;
+
+--tick timer clock
+	tickTimerClock			<= clk50;
+
+--frame timer process clock (not timer clock)
+	frameTimerClock	<= clk100;
+
+--blitter clock
+	bltClock				<= clk100;
+
+--spi clock
+	spiClock				<= clk50;
+
+--fpmult clock
+	fpmultClock			<= clk100;
+	
+--fpadd clock
+	fpaddClock			<= clk100;
+	
+--fpsub clock
+	fpsubClock			<= clk100;
+	
+--fpdiv clock
+	fpdivClock			<= clk100;
+	
+-- place text mode font rom	
+fontPromInst: fontProm 
+	port map(
+		clock 	=> pgClock,
+		address	=> fontRomA,
+		q			=> fontRomDout
+	);
+	
+
+-- place text mode video ram
+videRAMLInst: VideoRamL
+    port map (
+        clock_b	=> pgclock,   
+        address_b	=> videoRamBA,
+        q_b   		=> videoRamBDout( 7 downto 0 ),
+        data_b    => ( others => '0' ),
+        wren_b    => '0',
+
+--		  clock_a	=> '0',
+--		  address_a	=> ( others => '0' ),
+--		  data_a		=> ( others => '0' ),
+--		  wren_a		=> '0'
+		  
+        clock_a 	=> fpgaCpuMemoryClock,    
+        address_a	=> cpuAOut( 10 downto 0 ),
+        q_a   		=> videoRamLADout,
+        data_a    => cpuDOut( 7 downto 0 ),
+        wren_a    => cpuWr and videoRamLACpuCe
+    );
+
+-- place gfx pixel gen buf ram
+	
+	gfxBufRAMInst: gfxBufRam
+	port map(
+
+		rdclock		=> pgClock,
+		rdaddress	=> gfxBufRamRdA,
+		q				=> gfxBufRamDOut,
+
+		wrclock		=> dmaClock,	--change to DMA clock
+		wren			=> gfxBufRamWe,
+		wraddress	=> gfxBufRamWrA,
+		data			=> gfxBufRamDIn
+	);
+
+	
+videRAMHInst: VideoRamH
+    port map (
+        clock_b	=> pgclock,   
+        address_b	=> videoRamBA,
+        q_b   		=> videoRamBDout( 15 downto 8 ),
+        data_b    => ( others => '0' ),
+        wren_b    => '0',
+
+--		  clock_a	=> '0',
+--		  address_a	=> ( others => '0' ),
+--		  data_a		=> ( others => '0' ),
+--		  wren_a		=> '0'
+
+        clock_a 	=> fpgaCpuMemoryClock,    
+        address_a	=> cpuAOut( 10 downto 0 ),
+        q_a   		=> videoRamHADout,
+        data_a    => cpuDOut( 15 downto 8 ),
+        wren_a    => cpuWr and videoRamHACpuCe
+    );
+	
+
+	-- pixel gen
+
+	--place pixel gen
+	pixelGenInst: pixelGenTxt
+    port map(
+        reset           => reset,
+        pgClock         => pgClock,
+
+        pgVSync         => pgVSync,
+        pgHSync         => pgHSync,
+        pgDe            => pgDe,
+        pgR             => pgR,
+        pgG             => pgG,
+        pgB             => pgB,
+
+        fontRomA        => fontRomA,
+        fontRomDout     => fontRomDout,
+
+        videoRamBA      => videoRamBA,
+        videoRamBDout   => videoRamBDout,
+		  
+		  pgXCount			=> pgXCount,
+		  pgYCount			=> pgYCount,
+		  pgDeX				=> pgDeX,
+		  pgDeY				=> pgDeY,
+		  pgPreFetchLine	=> pgPreFetchLine,
+		  pgFetchEnable	=> pgFetchEnable
+		  
+    ); 	
+
+	
+--place pixel gen gfx
+
+	pixelGenGfxInst: pixelGenGfx
+	port map(
+		reset					=> reset,
+		pggClock        	=> pgClock,
+		
+		pggR					=> pggR,
+		pggG					=> pggG,
+		pggB					=> pggB,
+
+		--gfx buffer ram
+		gfxBufRamDOut		=> gfxBufRamDOut,
+		gfxBufRamRdA		=> gfxBufRamRdA,
+	
+		--2 dma requests
+		pggDMARequest		=> pggDMARequest,
+
+		--sync gen outputs
+		pgVSync        	=> pgVSync,
+		pgHSync				=> pgHSync,
+		pgDe					=> pgDe,
+		pgXCount				=> pgXCount,
+		pgYCount				=> pgYCount,
+		pgDeX          	=> pgDeX,
+		pgDeY					=> pgDeY,
+		pgPreFetchLine		=> pgPreFetchLine,
+		pgFetchEnable		=> pgFetchEnable,
+		
+		pgVideoMode			=> vmMode( 5 downto 4 )
+	);
+
+	
+
+--video out mux (pixelGenTxt and pixelGenGfx)
+
+
+videoMux: process( all )
+
+begin
+
+	if rising_edge( pgClock ) then
+	
+		if reset = '1' then
+			
+			
+						
+		else
+		
+			case vmMode( 1 downto 0 ) is
+			
+				--text mode
+				when "00" =>
+				
+					hsync       <= pgHSync;
+					vsync       <= pgVSync;
+					
+					red		<= pgR( 7 downto 3 );
+					green    <= pgG( 7 downto 3 );
+					blue     <= pgB( 7 downto 3 );
+			
+				--gfx mode
+				when "01"	=>
+				
+					hsync       <= pgHSync;
+					vsync       <= pgVSync;
+					
+					red		<= pggR( 7 downto 3 );
+					green    <= pggG( 7 downto 3 );
+					blue     <= pggB( 7 downto 3 );
+
+				--text over gfx mode
+				when "10" =>
+				
+					hsync       <= pgHSync;
+					vsync       <= pgVSync;
+
+					if	pgR = x"00" and pgG = x"00" and pgB = x"00" then
+						
+						red		<= pggR( 7 downto 3 );
+						green    <= pggG( 7 downto 3 );
+						blue     <= pggB( 7 downto 3 );
+						
+					--gray color -> dim background
+					elsif pgR = x"80" and pgG = x"80" and pgB = x"80" then
+				
+						red		<= "0" & pggR( 7 downto 4 );
+						green    <= "0" & pggG( 7 downto 4 );
+						blue     <= "0" & pggB( 7 downto 4 );
+						
+					else
+
+						red		<= pgR( 7 downto 3 );
+						green    <= pgG( 7 downto 3 );
+						blue     <= pgB( 7 downto 3 );
+					
+					end if;
+
+				--gfx over text mode
+				when "11" =>
+				
+					hsync       <= pgHSync;
+					vsync       <= pgVSync;
+					--dviDE       <= pgDE;
+
+					if	pggR = x"00" and pggG = x"00" and pggB = x"00" then
+						
+						red		<= pgR( 7 downto 3 );
+						green    <= pgG( 7 downto 3 );
+						blue     <= pgB( 7 downto 3 );
+						
+					else
+
+						red		<= pggR( 7 downto 3 );
+						green    <= pggG( 7 downto 3 );
+						blue     <= pggB( 7 downto 3 );
+						
+					end if;
+
+				when others =>
+				
+				
+			end case;
+		
+		end if;
+	
+	end if;
+	
+end process;
+
+--place simple uart
+extUartTx   <= suTxd;
+suRxd       <= extUartRx;
+
+
+simpleUARTInst: simpleUART
+    port map(
+        reset                       => reset,
+        clock                       => uartClock,     
+
+        uartTXD                     => suTxd,
+        uartRXD                     => suRxd,
+
+        dataSenderReady             => suDataSenderReady,
+        dataToSend                  => cpuDOut( 7 downto 0 ),
+        dataToSendStrobe            => suDataToSendStrobe,
+
+        dataReceivedReady           => suDataReceivedReady,
+        dataReceived                => suDataReceived,
+        dataReceivedReadAcknowledge => suDataReceivedAcknowlegde
+    );  
+
+--place simple SPI	
+	
+	sdMciClk		<= spiSClk;
+	sdMciDat(3)	<= gpoRegister( 0 );	--cs
+	sdMciCmd		<= spiMOSI;
+	spiMISO		<= sdMciDat( 0 );
+
+
+	sdMciDat(2 downto 0 ) 	<= "ZZZ";
+
+	
+simpleSPIInst:simpleSPI
+	port map(
+		reset					=> reset,
+		clock					=> spiClock,
+		sclk					=> spiSClk,
+		mosi					=> spiMOSI,
+		miso					=> spiMISO,
+	
+		spiReady				=> spiReady,
+		dataToSend			=> cpuDOut( 7 downto 0),
+		dataReceived		=> spiDataReceived,
+		dataToSendStrobe	=> spiDataToSendStrobe
+	);
+	
+	
+-- place system ram ( bootloader and stack )
+
+systemRAMInst: systemRAM 
+	port map
+	(
+		address_a		=> cpuAOut( 12 downto 0 ),
+		address_b		=> ( others => '0' ),
+		byteena_a		=> cpuDataMask,
+		byteena_b		=> "1111",
+		clock_a			=> fpgaCpuMemoryClock,
+		clock_b			=> '0',
+		data_a			=> cpuDOut,
+		data_b			=> ( others => '0' ),
+		wren_a			=> cpuWr and systemRAMCE,
+		wren_b			=> '0',
+		q_a				=> systemRamDoutForCPU
+		--q_b				: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
+	);
+
+
+	
+	cpuAOut 				<= cpuAOutFull( 31 downto 2 );
+
+	cpuWr					<= cpuWrStrobe( 3 ) or cpuWrStrobe( 2 ) or cpuWrStrobe( 1 ) or cpuWrStrobe( 0 );
+
+	cpuDataMask			<= cpuWrStrobe when cpuWr = '1' else "1111";
+
+
+
+	systemRAMCE			<= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"000" else
+								'1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"00f" else
+								'0';
+
+	videoRamLACpuCe	<= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"100" and cpuDataMask( 0 ) = '1' else '0';
+
+	videoRamHACpuCe	<= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"100" and cpuDataMask( 1 ) = '1' else '0';
+
+
+--	dmaMemoryCE			<= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 20 ) = x"002" else
+--								'1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 20 ) = x"003" else '0';
+			
+	dmaMemoryCE			<= '1' when ( cpuMemValid = '1'  ) and cpuAOutFull( 31 downto 24 ) = x"20" else '0';
+			
+	registersCE			<= '1' when ( cpuMemValid = '1' ) and cpuAOutFull( 31 downto 20 ) = x"f00" else '0';
+
+
+
+	cpuMemReady			<= '1' when systemRAMCE = '1' or videoRamLACpuCe = '1' or videoRamHACpuCe = '1' or registersCE = '1' else 
+								cpuDmaMemoryReady when dmaMemoryCE = '1' else 
+								'1';
+
+
+
+	cpuDin				<= systemRamDoutForCPU 								when cpuAOutFull( 31 downto 20 ) = x"000" else 
+								systemRamDoutForCPU 								when cpuAOutFull( 31 downto 20 ) = x"00f" else 
+								x"0000"&videoRamHADout&videoRamLADout 		when cpuAOutFull( 31 downto 20 ) = x"100" else
+								registersDoutForCPU								when cpuAOutFull( 31 downto 20 ) = x"f00" else
+--								dmaDoutForCpu										when cpuAOutFull( 31 downto 20 ) = x"002" else
+--								dmaDoutForCpu										when cpuAOutFull( 31 downto 20 ) = x"003" else  
+								dmaDoutForCpu										when cpuAOutFull( 31 downto 24 ) = x"20"  else
+								dmaDoutForCpu										when cpuAOutFull( 31 downto 20 ) = x"003" else  
+								x"00000000";
+
+							
+															
+picorv32Inst: picorv32 
+	port map
+	(
+		clk					=> cpuClock,
+		resetn				=> cpuResetn,
+		--trap:				out std_logic;
+		mem_valid			=> cpuMemValid,
+		mem_instr			=> cpuMemInstr,
+		mem_ready			=> cpuMemReady,
+
+		mem_addr				=> cpuAOutFull,
+		mem_wdata			=> cpuDOut,
+		mem_wstrb			=> cpuWrStrobe,
+		mem_rdata			=> cpuDin,
+
+		--Look-Ahead Interface
+		--mem_la_read: 	out std_logic;
+		--mem_la_write:	out std_logic;
+		--mem_la_addr:	out std_logic_vector( 31 downto 0 );
+		--mem_la_wdata:	out std_logic_vector( 31 downto 0 );
+		--mem_la_wstrb:	out std_logic_vector( 3 downto 0 );
+
+		--Pico Co-Processor Interface (PCPI)
+		--pcpi_valid:		out std_logic;
+		--pcpi_insn:		out std_logic_vector( 31 downto 0 );
+		--pcpi_rs1:		out std_logic_vector( 31 downto 0 );
+		--pcpi_rs2:		out std_logic_vector( 31 downto 0 );
+		pcpi_wr				=> '0',
+		pcpi_rd				=> ( others => '0' ),
+		pcpi_wait			=> '0',
+		pcpi_ready			=> '0',
+
+		--IRQ Interface
+		irq					=> ( others => '0' )
+		--eoi:				out std_logic_vector( 31 downto 0 );
+
+		--Trace Interface
+		--trace_valid:	out std_logic;
+		--trace_data:		out std_logic_vector( 35 downto 0 )
+
+);
+ 
+
+ 
+-- cpu to dma interface process
+
+cpuDMA: process( all )
+
+begin
+
+	--if falling_edge( cpuClock ) then
+	if rising_edge( cpuDmaClock ) then
+	
+		if  dmaMemoryCE = '0' or reset = '1' then
+
+			cpuDmaMemoryReady		<= '0';
+			cpuDMARequest			<= '0';
+		
+			cpuDmaState		<= cpuDmaIdle;
+			
+			
+		else
+		
+			case cpuDmaState is
+			
+				when cpuDmaIdle =>
+				
+					cpuDmaMemoryReady	<= '0';
+					
+					
+					if dmaMemoryCE = '1' then
+					
+						cpuDmaMemoryReady	<= '0';
+						
+						if cpuDmaReady = '1' then
+							
+							cpuDMARequest 	<= '1';
+							cpuDmaState	<= cpuDmaWaitForBusy;
+						
+						end if;
+						
+					end if;
+				
+--				when cpuDmaWait1 =>
+--				
+--				
+--							cpuDMARequest 	<= '1';
+--							cpuDmaState		<= cpuDmaWaitForBusy;
+				
+				
+				when cpuDmaWaitForBusy =>
+				
+					if cpuDmaReady = '0' then
+					
+						cpuDMARequest 	<= '0';
+						cpuDmaState <= cpuDmaWaitForReady;
+						
+					end if;
+					
+				when cpuDmaWaitForReady =>
+				
+				
+					if cpuDmaReady = '1' then
+								
+							cpuDmaMemoryReady <= '1';
+							cpuDmaState			<= cpuDmaReportReady;
+							
+					end if;
+				
+				when cpuDmaReportReady =>
+				
+					cpuDmaMemoryReady <= '1';
+				
+				when others =>
+				
+					cpuDmaState <= cpuDmaIdle;
+			
+			end case;
+				
+		end if;
+		
+	end if;
+	
+end process;
+
+ 
+--registers process
+registers: process( all )
+
+begin
+	
+	if rising_edge( registersClock ) then
+	
+		if reset = '1' then
+		
+			registersDoutForCPU	<= ( others => '0' );
+			
+			--default register values
+			vmMode 						<= x"0002";
+			dmaDisplayPointerStart	<= ( others => '0' );
+			gpoRegister					<= ( others => '1' );
+			
+			spiDataToSendStrobe			<= '0';
+			tickTimerReset					<= '0';
+			
+			--gouraud edge components 
+			c0CX							<= ( others => '0' );
+			c0CY							<= ( others => '0' );
+			c0CZ							<= ( others => '0' );
+			
+			c0BX							<= ( others => '0' );
+			c0BY							<= ( others => '0' );
+			c0BZ							<= ( others => '0' );
+			
+			c0AX							<= ( others => '0' );
+			c0AY							<= ( others => '0' );
+			c0AZ							<= ( others => '0' );
+			
+			c0PxReg						<= ( others => '0' );
+			c0PyReg						<= ( others => '0' );
+
+			--c0Area						<= x"00000001";
+			
+			c0it0A						<= ( others => '0' );
+			c0it0B						<= ( others => '0' );
+			c0it0C						<= ( others => '0' );
+			
+			c0it1A						<= ( others => '0' );
+			c0it1B						<= ( others => '0' );
+			c0it1C						<= ( others => '0' );
+
+			c0it2A						<= ( others => '0' );
+			c0it2B						<= ( others => '0' );
+			c0it2C						<= ( others => '0' );
+
+			--blitter
+			bltConfig0Reg				<= ( others => '0' );
+			bltValueReg					<= ( others => '1' );
+			bltSrcAddressReg			<= ( others => '0' );
+			bltSrcModuloReg			<= ( others => '0' );
+			bltDestAddressReg			<= ( others => '0' );
+			bltDestModuloReg			<= ( others => '0' );
+			bltTransferWidthReg		<= ( others => '0' );
+			bltTransferHeightReg		<= ( others => '0' );
+			--bltGouraudXminReg			<= x"0020";
+			--bltGouraudYminReg			<= x"0020";
+			
+			bboxRunCalc					<= '0';
+			
+			bltAlphaReg					<= x"00"&"00011111";
+		
+		else
+		
+			suDataToSendStrobe         <= '0';
+			suDataReceivedAcknowlegde	<= '0';
+			spiDataToSendStrobe			<= '0';
+			tickTimerReset					<= '0';
+			bltRun							<= '0';
+			bboxRunCalc						<= '0';
+			frameTimerReset				<= '0';
+			
+			if registersCE = '1' then
+				
+				case cpuAOut( 7 downto 0 ) is
+			
+					--rw 0xf0000000 - uartData
+					when x"00" =>
+				
+						registersDoutForCPU	<= x"000000" & suDataReceived;
+					
+						suDataReceivedAcknowlegde	<= '1';
+					
+						if cpuWr = '1' then
+						
+							suDataToSendStrobe <= '1';
+						
+						end if;
+					
+					--rw 0xf0000004 - uartStatus
+					when x"01" =>
+			
+						registersDoutForCPU	<= x"000000" & "000000" & suDataSenderReady & suDataReceivedReady;
+			
+					--rw 0xf0000008 - videoMuxMode
+					when x"02" =>
+			
+						registersDoutForCPU	<= x"0000" & vmMode;
+						
+						if cpuWr = '1' then
+						
+							vmMode	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+			
+					--rw 0xf000000c - videoVSync
+					when x"03" =>
+			
+						registersDoutForCPU	<= x"0000" & x"000" & "000" & pgVSync;
+
+					--rw 0xf0000010 - dmaDisplayPointerStart
+					when x"04" =>
+			
+						registersDoutForCPU	<= "0000000000000" & dmaDisplayPointerStart;
+						
+						if cpuWr = '1' then
+						
+							dmaDisplayPointerStart	<= cpuDOut( 18 downto 0 );
+						
+						end if;
+			
+					
+					--rw 0xf0000014 - spi0Data
+					when x"05" =>
+			
+						registersDoutForCPU	<= x"0000" &  x"00" & spiDataReceived;
+						
+						if cpuWr = '1' then
+						
+							spiDataToSendStrobe	<= '1';
+						
+						end if;
+						
+					--rw 0xf0000018 - spi0Status
+					when x"06" =>
+			
+						registersDoutForCPU	<= x"0000" & "000000000000000" & spiReady;
+						
+					--rw 0xf000001c - gpoPort
+					when x"07" =>
+			
+						registersDoutForCPU	<= x"0000" & x"00" & gpoRegister;
+						
+						if cpuWr = '1' then
+						
+							gpoRegister	<= cpuDOut( 7 downto 0 );
+						
+						end if;
+						
+					---w 0xf0000020 - tickTimerConfig
+					when x"08" =>
+									
+						if cpuWr = '1' then
+						
+							tickTimerReset	<= cpuDOut( 0 );
+						
+						end if;	
+						
+					--r- 0xf0000024 - tickTimerValue
+					when x"09" =>
+								
+						registersDoutForCPU	<= tickTimerCounter;
+							
+					---w 0xf0000028 - c0AX
+					when x"0a" =>
+								
+						if cpuWr = '1' then
+						
+							c0AX	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+
+					---w 0xf000002c - c0AY
+					when x"0b" =>
+								
+						if cpuWr = '1' then
+						
+							c0AY	<= cpuDOut( 15 downto 0 );
+												
+						end if;
+						
+					---w 0xf0000030 - c0BX
+					when x"0c" =>
+								
+						if cpuWr = '1' then
+						
+							c0BX	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+						
+					---w 0xf0000034 - c0BY
+					when x"0d" =>
+								
+						if cpuWr = '1' then
+						
+							c0BY	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+						
+					--rw 0xf0000038 - c0px
+					when x"0e" =>
+								
+						registersDoutForCPU <= x"0000" & c0PxReg;
+						
+						if cpuWr = '1' then
+						
+							c0PxReg	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+					
+					--rw 0xf000003c - c0py
+					when x"0f" =>
+								
+						registersDoutForCPU <= x"0000" & c0PyReg;
+						
+						if cpuWr = '1' then
+						
+							c0PyReg	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+
+					--r- 0xf0000040 - c0EdgeEBA
+					when x"10" =>
+								
+						registersDoutForCPU <= c0EdgeEBA;
+						
+					---w 0xf0000044 - c0CX
+					when x"11" =>
+								
+						if cpuWr = '1' then
+						
+							c0CX	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+												
+					---w 0xf0000048 - c0CY
+					when x"12" =>
+								
+						if cpuWr = '1' then
+						
+							c0CY	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+
+					--r- 0xf000004c - c0EdgeECB
+					when x"13" =>
+								
+						registersDoutForCPU <= c0EdgeECB;						
+
+					--r- 0xf0000050 - c0EdgeEAC
+					when x"14" =>
+								
+						registersDoutForCPU <= c0EdgeEAC;						
+
+					--r- 0xf0000054 - c0PInside
+					when x"15" =>
+
+							if c0EdgeEBA( 31 ) = '0' and c0EdgeECB( 31 ) = '0' and c0edgeEAC( 31 ) = '0' then
+								
+								registersDoutForCPU	<= x"00010001";
+							
+							else
+							
+								registersDoutForCPU	<= x"00000000";
+								
+							end if;
+							
+					--r- 0xf0000058 - c0Area
+					when x"16" =>
+								
+						registersDoutForCPU <= c0Area;						
+								
+					--r- 0xf000005c - c0wba
+					when x"17" =>
+								
+						registersDoutForCPU <= c0wba;	
+
+					--r- 0xf0000060 - c0wcb
+					when x"18" =>
+								
+						registersDoutForCPU <= c0wcb;	
+						
+					--r- 0xf0000064 - c0wac
+					when x"19" =>
+								
+						registersDoutForCPU <= c0wac;	
+
+					--rw 0xf0000068 - c0it0A
+					when x"1a" =>
+								
+						registersDoutForCPU <= x"000000" & c0it0A;
+					
+						if cpuWr = '1' then
+						
+							c0it0A <= cpuDout( 7 downto 0 );
+						
+						end if;
+
+					--rw 0xf000006c - c0it0B
+					when x"1b" =>
+								
+						registersDoutForCPU <= x"000000" & c0it0B;
+					
+						if cpuWr = '1' then
+						
+							c0it0B <= cpuDout( 7 downto 0 );
+						
+						end if;
+
+					--rw 0xf0000070 - c0it0C
+					when x"1c" =>
+								
+						registersDoutForCPU <= x"000000" & c0it0C;
+					
+						if cpuWr = '1' then
+						
+							c0it0C <= cpuDout( 7 downto 0 );
+						
+						end if;
+
+					--r- 0xf0000074 - c0It0Out
+					when x"1d" =>
+								
+						registersDoutForCPU <= x"000000" & c0It0Out;
+											
+					--rw 0xf0000078 - c0it1A
+					when x"1e" =>
+								
+						registersDoutForCPU <= x"000000" & c0it1A;
+					
+						if cpuWr = '1' then
+						
+							c0it1A <= cpuDout( 7 downto 0 );
+						
+						end if;
+				
+					--rw 0xf000007c - c0it1B
+					when x"1f" =>
+								
+						registersDoutForCPU <= x"000000" & c0it1B;
+					
+						if cpuWr = '1' then
+						
+							c0it1B <= cpuDout( 7 downto 0 );
+						
+						end if;
+
+					--rw 0xf0000080 - c0it1C
+					when x"20" =>
+								
+						registersDoutForCPU <= x"000000" & c0it1C;
+					
+						if cpuWr = '1' then
+						
+							c0it1C <= cpuDout( 7 downto 0 );
+						
+						end if;
+
+					--r- 0xf0000084 - c0It1Out
+					when x"21" =>
+								
+						registersDoutForCPU <= x"000000" & c0It1Out;
+					
+					--rw 0xf0000088 - c0it2A
+					when x"22" =>
+								
+						registersDoutForCPU <= x"000000" & c0it2A;
+					
+						if cpuWr = '1' then
+						
+							c0it2A <= cpuDout( 7 downto 0 );
+						
+						end if;
+					
+					--rw 0xf000008c - c0it2B
+					when x"23" =>
+								
+						registersDoutForCPU <= x"000000" & c0it2B;
+					
+						if cpuWr = '1' then
+						
+							c0it2B <= cpuDout( 7 downto 0 );
+						
+						end if;
+
+					--rw 0xf0000090 - c0it2C
+					when x"24" =>
+								
+						registersDoutForCPU <= x"000000" & c0it2C;
+					
+						if cpuWr = '1' then
+						
+							c0it2C <= cpuDout( 7 downto 0 );
+						
+						end if;
+						
+					--r- 0xf0000094 - c0It2Out
+					when x"25" =>
+								
+						registersDoutForCPU <= x"000000" & c0It2Out;
+
+					--r- 0xf0000098 - c0itRGB
+					when x"26" =>
+								
+						registersDoutForCPU <= x"0000" & c0it0Out( 7 downto 3 ) & c0it1Out( 7 downto 2 ) & c0it2Out( 7 downto 3 );
+
+					--rw 0xf000009c - bltStatus
+					when x"27" =>
+								
+						registersDoutForCPU	<= x"0000000" & "000" & bltReady;
+
+						if cpuWr = '1' then
+						
+							bltRun <= '1';
+						
+						end if;
+						
+					--rw 0xf00000a0 - bltConfig0
+					when x"28" =>
+								
+						registersDoutForCPU	<= bltConfig0Reg;
+
+						if cpuWr = '1' then
+						
+							bltConfig0Reg 	<= cpuDout;
+
+							--calc gouraud triangle bounding box
+							bboxRunCalc	<= '1';
+
+						end if;
+
+					--rw 0xf00000a4 - bltValue
+					when x"29" =>
+								
+						registersDoutForCPU	<= bltValueReg;
+
+						if cpuWr = '1' then
+						
+							bltValueReg <= cpuDout;
+						
+						end if;
+					
+					--rw 0xf00000a8 - bltSrcAddress
+					when x"2a" =>
+								
+						registersDoutForCPU	<= "000000000000" & bltSrcAddressReg;
+
+						if cpuWr = '1' then
+						
+							bltSrcAddressReg <= cpuDout( 19 downto 0 );
+						
+						end if;
+
+					--rw 0xf00000ac - bltDestAddress
+					when x"2b" =>
+								
+						registersDoutForCPU	<= "000000000000" & bltDestAddressReg;
+
+						if cpuWr = '1' then
+						
+							bltDestAddressReg <= cpuDout( 19 downto 0 );
+						
+						end if;
+
+					--rw 0xf00000b0 - bltSrcModulo
+					when x"2c" =>
+								
+						registersDoutForCPU	<= x"0000" & bltSrcModuloReg;
+
+						if cpuWr = '1' then
+						
+							bltSrcModuloReg <= cpuDout( 15 downto 0 );
+						
+						end if;
+						
+					--rw 0xf00000b4 - bltSrcModulo
+					when x"2d" =>
+								
+						registersDoutForCPU	<= x"0000" & bltDestModuloReg;
+
+						if cpuWr = '1' then
+						
+							bltDestModuloReg <= cpuDout( 15 downto 0 );
+						
+						end if;
+
+					--rw 0xf00000b8 - bltTransferWidth
+					when x"2e" =>
+								
+						registersDoutForCPU	<= x"0000" & bltTransferWidthReg;
+
+						if cpuWr = '1' then
+						
+							bltTransferWidthReg <= cpuDout( 15 downto 0 );
+						
+						end if;	
+
+					--rw 0xf00000bc - bltTransferHeight
+					when x"2f" =>
+								
+						registersDoutForCPU	<= x"0000" & x"0" & "000" & bltTransferHeightReg;
+
+						if cpuWr = '1' then
+						
+							bltTransferHeightReg <= cpuDout( 8 downto 0 );
+						
+						end if;	
+						
+					--rw 0xf00000c0 - bltGouraudXmin
+					when x"30" =>
+								
+						registersDoutForCPU	<= x"0000" & bltGouraudXminReg;
+
+--						if cpuWr = '1' then
+--						
+--							bltGouraudXminReg <= cpuDout( 15 downto 0 );
+--						
+--						end if;	
+
+					--rw 0xf00000c4 - bltGouraudYmin
+					when x"31" =>
+								
+						registersDoutForCPU	<= x"0000" & bltGouraudYminReg;
+
+--						if cpuWr = '1' then
+--						
+--							bltGouraudYminReg <= cpuDout( 15 downto 0 );
+--						
+--						end if;	
+							
+					--rw 0xf00000c8 - bltAlpha
+					when x"32" =>
+								
+						registersDoutForCPU	<= x"0000" & bltAlphaReg;
+
+						if cpuWr = '1' then
+						
+							bltAlphaReg <= cpuDout( 15 downto 0 );
+						
+						end if;	
+
+					---w 0xf00000cc - c0AZ
+					when x"33" =>
+								
+						if cpuWr = '1' then
+						
+							c0AZ	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+
+					---w 0xf00000d0 - c0BZ
+					when x"34" =>
+								
+						if cpuWr = '1' then
+						
+							c0BZ	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+
+					---w 0xf00000d4 - c0CZ
+					when x"35" =>
+								
+						if cpuWr = '1' then
+						
+							c0CZ	<= cpuDOut( 15 downto 0 );
+						
+						end if;
+
+					--rw 0xf00000d8 - bltGouraudZBufferAddressReg
+					when x"36" =>
+								
+						registersDoutForCPU	<= x"000" & bltGouraudZBufferAddressReg;
+						
+						if cpuWr = '1' then
+						
+							bltGouraudZBufferAddressReg	<= cpuDOut( 19 downto 0 );
+						
+						end if;
+					
+					--rw 0xf00000dc - fpmult0DataA
+					when x"37" =>
+								
+						registersDoutForCPU	<= fpmult0DataA;
+						
+						if cpuWr = '1' then
+						
+							fpmult0DataA	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--rw 0xf00000e0 - fpmult0DataB
+					when x"38" =>
+								
+						registersDoutForCPU	<= fpmult0DataB;
+						
+						if cpuWr = '1' then
+						
+							fpmult0DataB	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--r- 0xf00000e4 - fpmult0Result
+					when x"39" =>
+								
+						registersDoutForCPU	<= fpmult0Result;
+						
+											
+					--rw 0xf00000e8 - fpadd0DataA
+					when x"3a" =>
+								
+						registersDoutForCPU	<= fpadd0DataA;
+						
+						if cpuWr = '1' then
+						
+							fpadd0DataA	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--rw 0xf00000ec - fpadd0DataB
+					when x"3b" =>
+								
+						registersDoutForCPU	<= fpadd0DataB;
+						
+						if cpuWr = '1' then
+						
+							fpadd0DataB	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--r- 0xf00000f0 - fpadd0Result
+					when x"3c" =>
+								
+						registersDoutForCPU	<= fpadd0Result;
+
+					--rw 0xf00000f4 - fpsub0DataA
+					when x"3d" =>
+								
+						registersDoutForCPU	<= fpsub0DataA;
+						
+						if cpuWr = '1' then
+						
+							fpsub0DataA	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--rw 0xf00000f8 - fpsub0DataB
+					when x"3e" =>
+								
+						registersDoutForCPU	<= fpsub0DataB;
+						
+						if cpuWr = '1' then
+						
+							fpsub0DataB	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--r- 0xf00000fc - fpsub0Result
+					when x"3f" =>
+								
+						registersDoutForCPU	<= fpsub0Result;
+
+					--rw 0xf0000100 - fpdiv0DataA
+					when x"40" =>
+								
+						registersDoutForCPU	<= fpdiv0DataA;
+						
+						if cpuWr = '1' then
+						
+							fpdiv0DataA	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--rw 0xf0000104 - fpdiv0DataB
+					when x"41" =>
+								
+						registersDoutForCPU	<= fpdiv0DataB;
+						
+						if cpuWr = '1' then
+						
+							fpdiv0DataB	<= cpuDOut( 31 downto 0 );
+						
+						end if;
+
+					--r- 0xf0000108 - fpdiv0Result
+					when x"42" =>
+								
+						registersDoutForCPU	<= fpdiv0Result;
+						
+					--rw 0xf000010c - frameTimer (write resets timer)
+					when x"43" =>
+					
+						registersDoutForCPU	<= frameTimerValue;
+					
+						if cpuWr = '1' then
+							
+								frameTimerReset <= '1';
+								
+						end if;
+						
+					when others =>
+
+						registersDoutForCPU	<= ( others => '0' );
+					
+				end case; --cpuAOut( 7 downto 0 ) is
+			
+			end if; --registersCE = '1'
+		
+		end if; --! reset = '1'
+			
+	end if; --rising_edge( registersClock )
+	
+
+end process;
+
+
+
+--direct memory access
+
+	dmaRequest( 0 ) 	<= pggDMARequest( 0 );
+	dmaRequest( 1 ) 	<= pggDMARequest( 1 );
+
+	dmaRequest( 2 ) 	<= bltDMARequest;
+	bltDMAReady			<= dmaReady( 2 );
+	
+
+	dmaRequest( 3 ) 	<= cpuDMARequest;	
+	cpuDmaReady			<= dmaReady( 3 );
+	
+
+	
+dmaProcess:	process( all )
+
+begin
+
+	if rising_edge( dmaClock ) then
+
+		if reset = '1' then
+		
+			dmaReady						<= ( others => '1' );
+			dmaDisplayPointer			<= ( others => '0' );
+			dmaDisplayBufferPointer	<= ( others => '0' );
+			dmaRequestReg				<= ( others => '0' );
+			dmaDoutForCpu				<= ( others => '0' );
+			
+			dmaState						<= dmaIdle;
+			
+			--static ram signals
+			gds0_7n		<= '1';
+			gds8_15n		<= '1';
+			gds16_23n	<= '1';
+			gds24_31n	<= '1';
+			gwen			<= '1';
+			goen			<= '1';
+
+			ga				<= ( others => '0' );
+			gd				<= ( others => 'Z' );
+
+			--gfx buf ram signals
+			gfxBufRamWe		<= '0';
+			gfxBufRamWrA	<= ( others => '0' );
+			gfxBufRamDIn	<= ( others => '0' );
+
+			--ch2 signals
+			dmaCh2Dout		<= ( others => '0' );
+			
+		else
+		
+		
+			if pgVSync = '1' then
+			
+				dmaDisplayPointer	<= dmaDisplayPointerStart;
+			
+			end if;
+			
+			if dmaRequest( 0 ) = '1' then
+				dmaRequestReg( 0 ) <= '1';
+			end if;
+			
+			if dmaRequest( 1 ) = '1' then
+				dmaRequestReg( 1 ) <= '1';
+			end if;
+			
+			if dmaRequest( 2 ) = '1' then
+				dmaRequestReg( 2 ) <= '1';
+			end if;
+			
+			if dmaRequest( 3 ) = '1' then
+				dmaRequestReg( 3 ) <= '1';
+			end if;
+			
+			
+			case dmaState is
+			
+				when dmaIdle =>
+				
+				
+					--gfx lower line
+					if dmaRequestReg( 0 ) = '1' then
+					
+						dmaReady( 0 ) 				<= '0';
+						
+						dmaDisplayBufferPointer	<= "000000000";
+						dmaTransferCounter		<= x"a0";		--160 long words
+						
+						ga								<= "00" & dmaDisplayPointer( 18 downto 0 );				
+						gd								<= ( others => 'Z' );
+
+						dmaState	<= dmaGfxFetch0;
+			
+					--gfx upper line
+					elsif dmaRequestReg( 1 ) = '1' then
+			
+						dmaReady( 1 ) <= '0';
+						
+						dmaDisplayBufferPointer	<= "100000000";
+						dmaTransferCounter		<= x"a0";		--160 long words
+						
+						ga								<= "00" & dmaDisplayPointer( 18 downto 0 );				
+						gd								<= ( others => 'Z' );
+						
+						dmaState						<= dmaGfxFetch0;
+			
+					--blitter 16/32 bit
+					elsif dmaRequestReg( 2 ) = '1' then
+					
+						dmaReady( 2 ) <= '0';
+						
+						if dmaCh2TransferSize = '0' then
+						
+							--16bit transfer
+							
+							ga	<= "00" & dmaCh2A( 19 downto 1 );
+						
+
+							if dmaCh2A( 0 ) = '0' then
+															
+								gds0_7n		<= '0';
+								gds8_15n		<= '0';	
+								gds16_23n	<= '1';
+								gds24_31n	<= '1';
+															
+							else
+															
+								gds0_7n		<= '1';
+								gds8_15n		<= '1';
+								gds16_23n	<= '0';
+								gds24_31n	<= '0';	
+								
+							end if;					
+						
+							if dmaCh2RWn = '1' then
+							
+								--read
+								gd					<= ( others => 'Z' );
+								gwen				<= '1';
+								goen				<= '0';
+							
+								dmaState			<= dmaCh2Read0;
+							
+							else
+							
+								--write
+								if dmaCh2A( 0 ) = '0' then
+							
+									gd( 15 downto 0 ) <= dmaCh2Din( 15 downto 0 );
+
+								else
+									gd( 31 downto 16 ) <= dmaCh2Din( 15 downto 0 );
+							
+								end if;
+
+								gwen				<= '1';
+								goen				<= '1';
+							
+								dmaState			<= dmaCh2Write0;
+							
+							end if; --dmaCh2RWn ='1'
+							
+						else	
+							
+							--32 bit transfer
+							
+							ga	<= "00" & dmaCh2A( 18 downto 0 );
+						
+															
+							gds0_7n		<= '0';
+							gds8_15n		<= '0';	
+							gds16_23n	<= '0';
+							gds24_31n	<= '0';
+															
+																							
+							if dmaCh2RWn = '1' then
+							
+								--read
+								gd					<= ( others => 'Z' );
+								gwen				<= '1';
+								goen				<= '0';
+							
+								dmaState			<= dmaCh2Read32_0;
+							
+							else
+							
+								--write							
+								gd 				<= dmaCh2Din;
+
+								gwen				<= '1';
+								goen				<= '1';
+							
+								dmaState			<= dmaCh2Write32_0;
+							
+							end if; --dmaCh2RWn ='1'
+							
+							
+						end if; --dmach2TransferSize = '0'
+						
+					--cpu
+					elsif dmaRequestReg( 3 ) = '1' then
+					
+						--write						
+						if cpuWr = '1' then
+							
+							dmaReady( 3 ) 	<= '0';
+							ga					<= cpuAOut( 20 downto 0 );
+							gd					<= cpuDOut;
+								
+							
+							gds0_7n		<= not cpuDataMask( 0 );
+							gds8_15n		<= not cpuDataMask( 1 );	
+							gds16_23n	<= not cpuDataMask( 2 );
+							gds24_31n	<= not cpuDataMask( 3 );
+								
+							gwen				<= '1';
+							goen				<= '1';
+						
+							
+							dmaState		<= dmaCpuWrite0;
+							
+						else
+						
+						--read
+						
+							dmaReady( 3 ) 	<= '0';
+							ga					<= cpuAOut( 20 downto 0 );
+							gd					<= ( others => 'Z' );
+							gwen				<= '1';
+							goen				<= '0';
+							
+															
+							gds0_7n		<= '0';
+							gds8_15n		<= '0';	
+							gds16_23n	<= '0';
+							gds24_31n	<= '0';
+									
+																									
+							dmaState		<= dmaCpuRead1;
+					
+						end if;	--cpuMrL = '1' or cpuMrH = '1'
+					
+				
+				
+					end if; --dmaRequest( 3 ) = '1'
+			
+			when dmaCh2Read0 =>
+			
+				dmaState		<= dmaCh2Read2; -- skip waitstates
+			
+			when dmaCh2Read1 =>
+			
+				
+				dmaState	<= dmaCh2Read2;
+
+			when dmaCh2Read2 =>
+			
+				dmaState	<= dmaCh2Read3;
+				
+				
+			when dmaCh2Read3 =>
+			
+				if dmaCh2A( 0 ) = '0' then
+				
+					dmaCh2Dout( 15 downto 0 )	<= gd( 15 downto 0 );
+					
+				else
+				
+					dmaCh2Dout( 15 downto 0 )	<= gd( 31 downto 16 );
+					
+				end if;
+				
+				
+				dmaRequestReg( 2 ) 	<= '0';
+				dmaReady( 2 )			<= '1';
+				
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+
+				dmaState	<= dmaIdle;
+				
+			when dmaCh2Write0	=>
+			
+				gwen		<= '0';
+				
+				dmaState	<= dmaCh2Write2;	
+
+			when dmaCh2Write1	=>
+				
+				gwen		<= '1';
+				
+				dmaState	<= dmaCh2Write2;
+				
+			when dmaCh2Write2 =>
+
+			
+				gwen			<= '1';
+			
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+				
+				gd				<= ( others => 'Z' );
+				
+				dmaState	<= dmaCh2Write3;
+
+			when dmaCh2Write3 =>
+				
+				gwen			<= '1';
+			
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+				
+				gd				<= ( others => 'Z' );
+				
+				dmaReady( 2 ) 			<= '1';
+				dmaRequestReg( 2 )	<= '0';
+				dmaState					<= dmaIdle;			
+
+			when dmaCh2Read32_0 =>
+			
+				dmaState		<= dmaCh2Read32_1; 
+			
+			when dmaCh2Read32_1 =>
+			
+				
+				dmaState	<= dmaCh2Read32_2;
+
+			when dmaCh2Read32_2 =>
+			
+				dmaState	<= dmaCh2Read32_3;
+				
+				
+			when dmaCh2Read32_3 =>
+			
+				dmaCh2Dout	<= gd;				
+				
+				dmaRequestReg( 2 ) 	<= '0';
+				dmaReady( 2 )			<= '1';
+				
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+
+				dmaState	<= dmaIdle;				
+
+			when dmaCh2Write32_0	=>
+			
+				gwen		<= '0';
+				
+				dmaState	<= dmaCh2Write32_1;	
+
+			when dmaCh2Write32_1	=>
+				
+				gwen		<= '1';
+				
+				dmaState	<= dmaCh2Write32_3;
+				
+			when dmaCh2Write32_2 =>
+
+			
+				gwen			<= '1';
+			
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+				
+				gd				<= ( others => 'Z' );
+				
+				dmaState	<= dmaCh2Write32_3;
+
+			when dmaCh2Write32_3 =>
+				
+				gwen			<= '1';
+			
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+				
+				gd				<= ( others => 'Z' );
+				
+				dmaReady( 2 ) 			<= '1';
+				dmaRequestReg( 2 )	<= '0';
+				dmaState					<= dmaIdle;			
+				
+			when dmaCpuRead0 =>
+			
+				dmaState		<= dmaCpuRead1; 
+			
+			when dmaCpuRead1 =>
+			
+				
+				dmaState	<= dmaCpuRead2;
+
+			when dmaCpuRead2 =>
+			
+				
+				dmaState	<= dmaCpuRead3;
+
+			when dmaCpuRead3 =>
+			
+				
+				dmaState	<= dmaCpuRead4;
+				
+				
+			when dmaCpuRead4 =>
+			
+				dmaDoutForCpu	<= gd;
+				
+					
+				dmaRequestReg( 3 ) 	<= '0';
+				dmaReady( 3 )			<= '1';
+				
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+
+				dmaState	<= dmaIdle;
+				
+			when dmaCpuWrite0	=>
+			
+				gwen		<= '1';
+				
+				dmaState	<= dmaCpuWrite1;	
+
+			when dmaCpuWrite1	=>
+				
+				gwen		<= '0';
+				
+				dmaState	<= dmaCpuWrite4;	-- skip waitstates
+
+			when dmaCpuWrite2	=>
+				
+				gwen		<= '0';
+				
+				dmaState	<= dmaCpuWrite3;	
+				
+			when dmaCpuWrite3 =>
+	
+				--static ram signals
+				gwen			<= '1';
+				
+				
+				dmaState	<= dmaCpuWrite4;
+
+			when dmaCpuWrite4 =>
+				
+				gwen			<= '1';
+			
+				--static ram signals
+				gds0_7n		<= '1';
+				gds8_15n		<= '1';
+				gds16_23n	<= '1';
+				gds24_31n	<= '1';
+				gwen			<= '1';
+				goen			<= '1';
+				
+				gd				<= ( others => 'Z' );
+				
+				dmaReady( 3 ) 			<= '1';
+				dmaRequestReg( 3 )	<= '0';
+				dmaState					<= dmaIdle;
+				
+				
+			when dmaGfxFetch0 =>
+		
+				gfxBufRamWe		<= '0';
+	
+				dmaTransferCounter		<= dmaTransferCounter - 1;
+				
+				ga								<= "00" & dmaDisplayPointer( 18 downto 0 );
+				
+				dmaDisplayPointer			<= dmaDisplayPointer	+ 1;
+				
+				gd								<= ( others => 'Z' );
+				
+					
+				gds0_7n						<= '0';
+				gds8_15n						<= '0';
+				gds16_23n					<= '0';
+				gds24_31n					<= '0';
+				
+				
+				gwen							<= '1';
+				goen							<= '0';
+			
+				gfxBufRamWe					<= '0';
+				gfxBufRamWrA				<= dmaDisplayBufferPointer;
+				
+				dmaDisplayBufferPointer	<= dmaDisplayBufferPointer + 1;
+				
+				dmaState						<= dmaGfxFetch1;
+				
+			when dmaGfxFetch1	=>
+			
+				
+				dmaState	<= dmaGfxFetch2;
+				
+				
+				
+			when dmaGfxFetch2	=>
+			
+				
+				dmaState	<= dmaGfxFetch3;
+				
+				
+			when dmaGfxFetch3 =>
+			
+				gfxBufRamDIn	<= gd;
+				
+				gfxBufRamWe		<= '1';
+
+				
+				if dmaTransferCounter = x"00" then
+				
+					--static ram signals
+					gds0_7n					<= '1';
+					gds8_15n					<= '1';
+					gds16_23n				<= '1';
+					gds24_31n				<= '1';
+					gwen						<= '1';
+					goen						<= '1';
+
+					ga							<= ( others => '0' );
+					gd							<= ( others => 'Z' );
+
+					dmaReady( 0 ) 			<= '1';
+					dmaReady( 1 ) 			<= '1';
+					dmaRequestReg( 0 )	<= '0';
+					dmaRequestReg( 1 )	<= '0';
+					
+					dmaState	<= dmaGfxFetch4;
+					
+				else
+				
+					dmaState	<= dmaGfxFetch0;
+				
+				end if;
+			
+			when dmaGfxFetch4 =>
+			
+				gfxBufRamWe		<= '0';
+
+				dmaState	<= dmaIdle;
+				
+				
+			when others =>
+				
+				
+					dmaState	<= dmaIdle;
+			
+			end case;
+			
+		
+		end if;
+	
+	end if;
+
+end process;
+
+
+--tick timer process
+
+tickTimer: process( all )
+begin
+
+	if rising_edge( tickTimerClock ) then
+	
+		if reset = '1' then
+			
+			tickTimerPrescalerCounter	<= ( others => '0' );
+			tickTimerCounter				<= ( others => '0' );
+			
+		
+		else
+		
+			if tickTimerPrescalerCounter /= x"00000000" then
+				
+				tickTimerPrescalerCounter <= tickTimerPrescalerCounter - 1;
+				
+			else
+			
+				tickTimerPrescalerCounter <= conv_std_logic_vector( tickTimerPrescalerValue, tickTimerPrescalerCounter'length );
+				
+				tickTimerCounter <= tickTimerCounter + 1;
+			
+			end if;
+		
+			if tickTimerReset = '1' then
+
+				tickTimerPrescalerCounter	<= ( others => '0' );
+				tickTimerCounter				<= ( others => '0' );
+			
+			end if;
+			
+		
+		end if;	--reset = '1'
+	
+	
+	end if; --rising_edge( tickTimerClock )
+
+end process;
+
+
+-- frame timer process
+
+frameTimerProcess: process( all )
+begin
+	
+	if rising_edge( frameTimerClock ) then
+
+		if frameTimerReset = '1' then
+		
+			frameTimerValue <= ( others => '0' );
+			
+		else
+		
+			frameTimerPgPrvVSync <= pgVSync;
+			
+			
+			if frameTimerPgPrvVSync = '0' and pgVSync = '1' then
+		
+				frameTimerValue <= frameTimerValue + '1';
+				
+			end if;
+		
+		end if;
+	
+	end if; -- rising_edge( frameTimerClock )
+end process;
+
+
+--place pixel alpha
+pixelAlphaInst:pixelAlpha
+port map(
+	 reset		=> reset,
+    clock		=> pixAlphaClock,
+	 	 
+	 colorInA	=> pixAlphaColorInA,
+	 colorInB	=> pixAlphaColorInB,
+	 alpha		=> pixAlphaAlpha,
+	 colorOut	=> pixAlphaColorOut
+);
+
+--gouraud triangle bounding box calculation
+
+gouraudBoundingBox: process( all )
+
+begin
+
+	if rising_edge( bltClock ) then
+	
+		if reset = '1' then
+
+			bboxState			<= bbstReady;
+			bltGouraudXminReg	<= ( others => '0' );
+			bltGouraudYminReg	<= ( others => '0' );
+			bltGouraudXmaxReg	<= ( others => '0' );
+			bltGouraudYmaxReg	<= ( others => '0' );
+
+		
+		else
+				
+			case bboxState is
+		
+				when bbStReady =>
+			
+					if bboxRunCalc = '1' then
+				
+						bboxState	<= bbSt1;
+					
+					end if;
+			
+			
+				when bbSt1 =>
+			
+					bltGouraudXminReg	<= bltTransferWidthReg;		--x"0140";	--320
+					bltGouraudXmaxReg	<= x"0000";
+					bltGouraudYminReg	<= "0000000" & bltTransferHeightReg;	--x"00f0";	--240
+					bltGouraudYmaxReg	<= x"0000";
+
+					if c0AX( 15 ) = '0' then
+						axUs <= c0AX;
+					else
+						axUs <= ( others => '0' );
+					end if;
+			
+			
+					if c0AY( 15 ) = '0' then
+						ayUs <= c0AY;
+					else
+						ayUs <= ( others => '0' );
+					end if;
+
+					if c0BX( 15 ) = '0' then			
+						bxUs <= c0BX;
+					else
+						bxUs <= ( others => '0' );
+					end if;
+			
+					if c0BY( 15 ) = '0' then
+						byUs <= c0BY;
+					else
+						byUs <= ( others => '0' );
+					end if;
+			
+					if c0CX( 15 ) = '0' then
+						cxUs <= c0CX;
+					else
+						cxUs <= ( others => '0' );
+					end if;
+			
+					if c0CY( 15 ) = '0' then
+						cyUs <= c0CY;
+					else
+						cyUs <= ( others => '0' );
+					end if;
+
+				
+					if bboxRunCalc = '0' then
+				
+						bboxState	<= bbSt2;
+				
+					end if;
+				
+				when bbSt2 =>
+			
+					if axUs < bltGouraudXminReg then
+						bltGouraudXminReg	<= axUs;
+					end if;
+				
+					if ayUs < bltGouraudYminReg then
+						bltGouraudYminReg	<= ayUs;
+					end if;
+				
+					if axUs > bltGouraudXmaxReg then
+						bltGouraudXmaxReg	<= axUs;
+					end if;
+				
+					if ayUs > bltGouraudYmaxReg then
+						bltGouraudYmaxReg	<= ayUs;
+					end if;
+				
+					bboxState	<= bbSt3;
+		
+				when bbSt3 =>
+			
+					if bxUs < bltGouraudXminReg then
+						bltGouraudXminReg	<= bxUs;
+					end if;
+				
+					if byUs < bltGouraudYminReg then
+						bltGouraudYminReg	<= byUs;
+					end if;
+				
+					if bxUs > bltGouraudXmaxReg then
+						bltGouraudXmaxReg	<= bxUs;
+					end if;
+				
+					if byUs > bltGouraudYmaxReg then
+						bltGouraudYmaxReg	<= byUs;
+					end if;
+				
+					bboxState	<= bbSt4;
+		
+				when bbSt4 =>
+			
+					if cxUs < bltGouraudXminReg then
+						bltGouraudXminReg	<= cxUs;
+					end if;
+				
+					if cyUs < bltGouraudYminReg then
+						bltGouraudYminReg	<= cyUs;
+					end if;
+				
+					if cxUs > bltGouraudXmaxReg then
+						bltGouraudXmaxReg	<= cxUs;
+					end if;
+				
+					if cyUs > bltGouraudYmaxReg then
+						bltGouraudYmaxReg	<= cyUs;
+					end if;
+				
+					bboxState	<= bbSt5;
+
+				when bbSt5 =>
+
+					if bltGouraudXminReg >= bltTransferWidthReg then
+						bltGouraudXminReg	<= bltTransferWidthReg - 1;
+					end if;
+				
+					if bltGouraudXmaxReg > bltTransferWidthReg then
+						bltGouraudXmaxReg	<= bltTransferWidthReg;
+					end if;
+
+					if bltGouraudYminReg >= bltTransferHeightReg then
+						bltGouraudYminReg	<= "0000000" & bltTransferHeightReg - 1;
+					end if;
+			
+					if bltGouraudYmaxReg > bltTransferHeightReg then
+						bltGouraudYmaxReg	<= "0000000" & bltTransferHeightReg;
+					end if;
+				
+					bboxState	<= bbStReady;
+
+		end case;
+		
+		
+		end if; --reset = '1'
+	
+	end if; --rising_edge( bltClock )
+
+
+end process;
+
+
+
+--blitter - raster operations coprocessor
+blitter: process( all )
+
+begin
+
+	if rising_edge( bltClock ) then
+	
+		if reset = '1' then
+			
+			bltState					<= bltStIdle;
+			bltReady					<= '1';
+			bltDMARequest			<= '0';
+			
+			bltReturnState			<= bltStIdle;
+			bltAccumulator			<= ( others => '0' );
+			bltYOffset				<= ( others => '0' );
+			
+			dmaCh2RWn				<= '1';
+			dmaCh2Din				<= ( others => '0' );
+			dmaCh2A					<= ( others => '0' );
+			
+			dmaCh2TransferMask	<= "11"; --use both words for 32 bit transfer
+			
+		else
+	
+	
+			case bltState is
+			
+				when bltStIdle =>
+			
+					--pass c0pXReg to c0Px and c0PyReg to c0Py, in idle gouraud is controlled by cpu
+					
+					c0Px <= c0PxReg;
+					c0Py <= c0PyReg;
+			
+					bltReady			<= '1';
+					bltDMARequest	<= '0';
+					
+					dmaCh2TransferSize	<= bltConfig0Reg( 13 );
+					
+					if bltRun = '1' then
+						
+						bltInsideTriangleFlag	<= '0';	--clear inside triangle drawn flag
+							
+						case bltConfig0Reg( 3 downto 0 ) is
+						
+							--write value to dest addr
+						
+
+							when "0000" =>
+								
+								--fill dest with fixed value
+
+								bltReady					<= '0';
+							
+								bltAccumulator			<= bltValueReg;
+														
+								bltTransferCounterX	<= bltTransferWidthReg;
+								bltTransferCounterY	<= bltTransferHeightReg;
+								bltDestAddress			<= bltDestAddressReg;
+							
+															
+								bltState					<= bltStWriteSignleVal0;
+
+							when "0001" =>
+							
+								--copy src to dest
+								bltReady					<= '0';
+								
+								bltTransferCounterX	<= bltTransferWidthReg;
+								bltTransferCounterY	<= bltTransferHeightReg;
+								bltDestAddress			<= bltDestAddressReg;
+								bltSrcAddress			<= bltSrcAddressReg;
+								
+								
+								bltState					<= bltStCopy0;
+								
+							when "0010" =>
+							
+								--copt src to dest with mask value
+								bltReady					<= '0';
+								
+								bltTransferCounterX	<= bltTransferWidthReg;
+								bltTransferCounterY	<= bltTransferHeightReg;
+								bltDestAddress			<= bltDestAddressReg;
+								bltSrcAddress			<= bltSrcAddressReg;
+								
+								dmaCh2TransferSize	<= '0';
+								
+								bltState					<= bltStCopy0;
+								
+							when "0011" =>
+							
+								--draw gouraud triangle :)
+								bltReady					<= '0';
+								
+								c0Px						<= bltGouraudXminReg;
+								c0Py						<= bltGouraudYminReg;
+															
+								bltState					<= bltStGouraud0;
+								
+							when "0100" =>
+								
+								--draw textured triangle :)
+								bltReady					<= '0';
+								
+								c0Px						<= bltGouraudXminReg;
+								c0Py						<= bltGouraudYminReg;
+								
+
+								bltState					<= bltStGouraud0;
+								
+							when "0101" =>
+								
+								--draw textured triangle with lighting :)
+								bltReady					<= '0';
+								
+								c0Px						<= bltGouraudXminReg;
+								c0Py						<= bltGouraudYminReg;
+								
+
+								bltState					<= bltStGouraud0;
+						
+							when "0110" =>
+							
+								--copt src to dest with alpha 
+								bltReady					<= '0';
+								
+								bltTransferCounterX	<= bltTransferWidthReg;
+								bltTransferCounterY	<= bltTransferHeightReg;
+								bltDestAddress			<= bltDestAddressReg;
+								bltSrcAddress			<= bltSrcAddressReg;
+								bltSrcAddress2			<= bltDestAddressReg;
+								bltSrcModulo2			<= bltDestModuloReg;
+								
+								pixAlphaAlpha			<= bltAlphaReg( 4 downto 0 );
+								
+
+								bltState					<= bltStCopy0;
+							
+							when "0111" =>
+							
+								--copt src to dest with alpha and mask
+								bltReady					<= '0';
+								
+								bltTransferCounterX	<= bltTransferWidthReg;
+								bltTransferCounterY	<= bltTransferHeightReg;
+								bltDestAddress			<= bltDestAddressReg;
+								bltSrcAddress			<= bltSrcAddressReg;
+								bltSrcAddress2			<= bltDestAddressReg;
+								bltSrcModulo2			<= bltDestModuloReg;
+								
+								pixAlphaAlpha			<= bltAlphaReg( 4 downto 0 );
+								
+
+								bltState					<= bltStCopy0;
+								
+							when others =>
+							
+								bltReady		<= '1';
+								
+						end case;
+						
+					end if;
+					
+				--gouraud
+				when bltStGouraud0 =>
+				
+					if c0Px < bltGouraudXmaxReg then
+					
+						--draw
+						
+						
+						--calc y offset
+						bltYOffset 					<= bltDestModuloReg * c0Py;
+						
+						bltState						<= bltStGouraud1;
+					
+					else
+						
+						bltInsideTriangleFlag	<= '0';	--new line, clear inside flag
+						
+						c0Px	<= bltGouraudXminReg;
+						
+						if c0Py < bltGouraudYmaxReg then
+	
+							c0Py <= c0Py + 1;
+	
+						else
+	
+							--finish drawing
+							bltState <= bltStIdle;
+							
+						end if;
+					
+					end if;
+					
+				when bltStGouraud1 =>
+
+					
+					if bltConfig0Reg( 12 ) = '1' then
+					
+						--z buffer enabled
+						if bltInsideTriangleFlag = '0' then
+						
+							bltTransferCounterX	<= x"0008";		--no memory write delay, add 8 wait cycles
+					
+						else
+
+							bltTransferCounterX	<= x"0003";		--memory write causes additional delay, add 3 wait cycles
+					
+						end if;
+					
+					else
+					
+						--z buffer disabled
+						if bltInsideTriangleFlag = '0' then
+						
+							bltTransferCounterX	<= x"0007";		--no memory write delay, add 7 wait cycles
+					
+						else
+
+							bltTransferCounterX	<= x"0003";		--memory write causes additional delay, add 3 wait cycles
+					
+						end if;
+					
+					end if;
+					
+					bltState	<= bltStGouraud2;
+
+				when bltStGouraud2 =>
+
+					if bltTransferCounterX /= x"0000" then
+					
+						bltTransferCounterX <= bltTransferCounterX - 1;
+					
+					else
+
+						bltState	<= bltStGouraud3;
+					
+					end if;
+					
+
+				when bltStGouraud3 =>
+				
+					bltDestAddress					<= bltDestAddressReg + c0Px + bltYOffset( 19 downto 0 );
+					bltGouraudZBufferAddress	<= bltGouraudZBufferAddressReg + c0Px + bltYOffset( 19 downto 0 );
+					
+					
+					c0Px				<= c0Px + 1;
+									
+					if c0EdgeEBA( 31 ) = '0' and c0EdgeECB( 31 ) = '0' and c0edgeEAC( 31 ) = '0' then
+						
+						--inside triangle
+						
+						bltInsideTriangleFlag	<= '1';
+						
+						--latch z iterator output
+						c0itZoutLatched			<= c0itZout;
+						
+
+		
+						
+						
+						if bltConfig0Reg( 3 downto 0 ) = "0011" then
+						
+							--gouraud triangle
+							
+
+							--point is inside triangle, draw it
+
+							--take rgb value from gouraud iterators
+							bltAccumulator( 15 downto 0 )	<= c0it0Out( 7 downto 3 ) & c0it1Out( 7 downto 2 ) & c0it2Out( 7 downto 3 );
+								
+							if bltConfig0Reg( 12 ) = '1' then
+							
+								--z buffer enabled
+								
+								--write data if closer to the camera than background pixel
+								bltReturnState <= bltStGouraud0;
+								bltState			<= bltStSubWriteWithZBuf0;
+								
+							else
+							
+								--z buffer disabled
+															
+								--write data
+								bltReturnState <= bltStGouraud0;
+								bltState			<= bltStSubWrite0;
+							
+							end if;
+							
+						elsif bltConfig0Reg( 3 downto 0 ) = "0100" or bltConfig0Reg( 3 downto 0 ) = "0101" then
+						
+							--textured triangle, texture 64x64 px
+							
+							--get texture color
+
+							case bltConfig0Reg( 11 downto 8 ) is
+							
+								when x"0" =>
+									
+									--texture 16x16
+									bltSrcAddress	<= bltSrcAddressReg + ( c0it1Out( 7 downto 4 ) & c0it0Out( 3 downto 4 ) );
+								
+								when x"1" =>
+									
+									--texture 32x32
+									bltSrcAddress	<= bltSrcAddressReg + ( c0it1Out( 7 downto 3 ) & c0it0Out( 7 downto 3 ) );
+									
+								when x"2" =>
+									
+									--texture 64x64
+									bltSrcAddress	<= bltSrcAddressReg + ( c0it1Out( 7 downto 2 ) & c0it0Out( 7 downto 2 ) );
+								
+								when x"3" =>
+									
+									--texture 128x128
+									bltSrcAddress	<= bltSrcAddressReg + ( c0it1Out( 7 downto 1 ) & c0it0Out( 7 downto 1 ) );
+									
+								when others =>
+									
+									--texture 256x256
+									bltSrcAddress	<= bltSrcAddressReg + ( c0it1Out( 7 downto 0 ) & c0it0Out( 7 downto 0 ) );
+								
+							end case;
+							
+							--store iterator 2 as light
+							txtShaderLightIn	<= c0it2Out( 7 downto 3);
+							
+							if bltConfig0Reg( 3 downto 0 ) = "0100" then
+							
+								bltReturnState	<= bltStGouraud4;	--no lighting
+							
+							else
+								
+								bltReturnState	<= bltStGouraud9;	--lighting
+							
+							end if;
+							
+							bltState			<= bltStSubRead0;					
+							
+						end if;	--bltConfig0Reg( 3 downto 0 ) = "0100" or bltConfig0Reg( 3 downto 0 ) = "0101"
+						
+					else
+						
+						if bltInsideTriangleFlag = '1' then
+						
+							bltInsideTriangleFlag <= '0';
+							c0Px <= bltTransferWidthReg + x"0001";
+						
+						end if;
+						
+						
+						
+						--point is outside triangle, discard it
+						bltState		<= bltStGouraud0;
+					
+					end if;
+					
+				--textured triangle, no light
+				when bltStGouraud4 =>								
+				
+					--texture color in accumulator, light disabled
+					--write data
+	
+					bltReturnState <= bltStGouraud0;
+	
+					if bltConfig0Reg( 12 ) = '1' then
+							
+						--z buffer enabled					
+						--write data only when z is closer to the camera than background
+						bltState			<= bltStSubWriteWithZBuf0;				
+
+					else
+						
+						--z buffer disabled
+						bltState			<= bltStSubWrite0;
+				
+					end if;
+				
+				-- textured triange, light
+				when bltStGouraud9 =>
+				
+					--lighting based on c0it2Out
+					
+					txtShaderColorIn 	<= bltAccumulator( 15 downto 0 );
+					
+						
+					bltState <= bltStGouraud10;
+					
+					
+				when bltStGouraud10 =>
+				
+					txtShaderColorIn 	<= bltAccumulator( 15 downto 0 );
+				
+					bltState <= bltStGouraud11;
+					
+
+				when bltStGouraud11 =>
+				
+					bltAccumulator( 15 downto 0 )	<= txtShaderColorOut;
+				
+					--texture color in accumulator
+
+					bltReturnState <= bltStGouraud0;
+					
+					if bltConfig0Reg( 12 ) = '1' then
+							
+						--z buffer enabled					
+						--write data only when z is closer to the camera than background
+						bltState			<= bltStSubWriteWithZBuf0;
+
+					else
+						--z buffer disables
+						--write data
+						bltState			<= bltStSubWrite0;
+					
+					end if;
+				
+				--fill with single value
+				when bltStWriteSignleVal0 =>
+				
+				
+					if bltTransferCounterX /= x"0000" then
+					
+						bltReturnState	<= bltStWriteSignleVal1;
+						bltState			<= bltStSubWrite0;
+					
+					else
+					
+						if bltTransferCounterY /= x"00" then
+							
+							bltTransferCounterY	<= bltTransferCounterY - 1;
+
+							bltDestAddress 		<= bltDestAddress + bltDestModuloReg;
+							blttransferCounterX	<= bltTransferWidthReg;
+							
+						else
+						
+							bltState			<= bltStIdle;
+
+						end if; --bltTransferCounterY /= x"00"
+						
+					end if; --bltTransferCounterX /= x"0000"
+					
+				when bltStWriteSignleVal1 =>
+				
+					bltDestAddress			<= bltDestAddress + 1;
+					bltTransferCounterX 	<= bltTransferCounterX - 1;
+					
+					bltState					<= bltStWriteSignleVal0;
+				
+				
+				--copy from srcaddress to destaddress
+				
+				when bltStCopy0 =>
+					
+					if bltTransferCounterX /= x"0000" then
+					
+						--read value
+						bltReturnState	<= bltStCopy1;
+						bltState			<= bltStSubRead0;
+					
+					else
+					
+						if bltTransferCounterY /= x"00" then
+							
+							bltTransferCounterY	<= bltTransferCounterY - 1;
+
+							bltSrcAddress			<= bltSrcAddress  + bltSrcModuloReg;
+							bltSrcAddress2			<= bltSrcAddress2 + bltSrcModulo2;
+							
+							bltDestAddress 		<= bltDestAddress + bltDestModuloReg;
+							blttransferCounterX	<= bltTransferWidthReg;
+							
+						else
+						
+							bltState			<= bltStIdle;
+
+						end if; --bltTransferCounterY /= x"00"
+						
+					end if; --bltTransferCounterX /= x"0000"
+				
+				when bltStCopy1 => 
+				
+					--check blitter mode
+					if bltConfig0Reg( 3 downto 0 ) = "0010" then
+						
+						--masked copy
+						
+						--check value
+						if bltAccumulator( 15 downto 0 ) = bltValueReg( 15 downto 0 ) then
+							
+							--read value equals mask, do not store
+							bltState	<= bltStCopy2;
+						
+						else
+
+							--read value is different from mask, store it							
+							bltReturnState	<= bltStCopy2;
+							bltState 		<= bltStSubWrite0;
+							
+						end if;
+					
+					elsif bltConfig0Reg( 3 downto 0 ) = "0110" then
+						
+						--copy with alpha
+					
+						--write source1 to alpha reg
+						pixAlphaColorInA	<= bltAccumulator( 15 downto 0 );
+						
+						--read source2 (background )
+						
+						bltReturnState	<= bltStCopy3;
+						bltState 		<= bltStSubRead2_0;
+						
+					elsif bltConfig0Reg( 3 downto 0 ) = "0111" then
+					
+						--copy with alpha and mask
+						--check value
+						if bltAccumulator( 15 downto 0 ) = bltValueReg( 15 downto 0 ) then
+							
+							--read value equals mask, do not store
+							bltState	<= bltStCopy2;
+						
+						else
+							
+							--write source1 to alpha reg
+							pixAlphaColorInA	<= bltAccumulator( 15 downto 0 );
+						
+							--read source2 (background )
+						
+							bltReturnState	<= bltStCopy3;
+							bltState 		<= bltStSubRead2_0;
+						end if;
+						
+					else
+						--normal copy
+						--store value
+						
+						bltReturnState	<= bltStCopy2;
+						bltState 		<= bltStSubWrite0;
+					
+					end if; --bltConfig0Reg( 3 downto 0 ) = "0010"
+					
+				when bltStCopy2 =>
+				
+					bltSrcAddress			<= bltSrcAddress  + 1;
+					bltSrcAddress2			<= bltSrcAddress2 + 1;
+					
+					bltDestAddress			<= bltDestAddress + 1;
+					bltTransferCounterX 	<= bltTransferCounterX - 1;
+					
+					bltState					<= bltStCopy0;
+					
+				when bltStCopy3 =>
+				
+				
+					--write source2 to alpha reg
+					pixAlphaColorInB	<= bltAccumulator( 15 downto 0 );
+					
+					bltState				<= bltStCopy4;
+					
+				when bltStCopy4 =>
+					
+					--waitstate
+					
+					bltState				<= bltStCopy5;
+				
+				when bltStCopy5 =>
+
+					--get alpha pixel
+					bltAccumulator( 15 downto 0 )	<= pixAlphaColorOut; 
+
+					--write pixel
+					bltReturnState	<= bltStCopy2;
+					bltState 		<= bltStSubWrite0;
+					
+					
+				--read source address and store in accumulator
+				--return to state in bltReturnState
+				when bltStSubRead0 =>
+						
+						dmaCh2A			<= bltSrcAddress;
+						dmaCh2RWn		<= '1';
+						
+						bltDMARequest	<= '1';
+					
+						bltState			<= bltStSubRead1;
+				
+				when bltStSubRead1 =>
+				
+					if bltDmaReady = '0' then
+					
+						bltDMARequest	<= '0';
+						bltState			<= bltStSubRead2;
+						
+					end if;
+				
+				when bltStSubRead2 =>
+				
+					if bltDmaReady = '1' then
+							
+						bltAccumulator	<= dmaCh2Dout;
+					
+						bltState	<= bltReturnState;
+					
+					end if;
+					
+						
+				--write accumulator to dest address
+				--return to state in bltReturnState
+				when bltStSubWrite0 =>
+				
+					if bltDmaReady = '1' then
+					
+						dmaCh2Din						<= bltAccumulator;
+						dmaCh2A							<= bltDestAddress;
+						dmaCh2RWn						<= '0';
+						
+						bltDMARequest					<= '1';
+					
+						bltState							<= bltStSubWrite1;
+					
+					end if;
+					
+				
+				when bltStSubWrite1 =>
+				
+					if bltDmaReady = '0' then
+					
+						bltDMARequest	<= '0';
+						bltState			<= bltStSubWrite2;
+						
+					end if;
+				
+				when bltStSubWrite2 =>
+				
+					if bltDmaReady = '1' then
+					
+						bltState	<= bltReturnState;
+					
+					end if;
+
+
+				--read source address 2 and store in accumulator
+				--return to state in bltReturnState
+				when bltStSubRead2_0 =>
+						
+						dmaCh2A			<= bltSrcAddress2;
+						dmaCh2RWn		<= '1';
+						
+						bltDMARequest	<= '1';
+					
+						bltState			<= bltStSubRead1;
+				
+				--write accumulator to dest address if current z is smaller than one in z buffer 
+				when bltStSubWriteWithZBuf0 =>
+				
+					--read z buffer
+					dmaCh2A			<= bltGouraudZBufferAddress;
+					dmaCh2RWn		<= '1';
+						
+					bltDMARequest	<= '1';
+					
+					bltState			<= bltStSubWriteWithZBuf1;
+					
+				when bltStSubWriteWithZBuf1 =>
+			
+					--dma ack
+					if bltDmaReady = '0' then
+					
+						bltDMARequest	<= '0';
+						bltState			<= bltStSubWriteWithZBuf2;
+						
+					end if;
+			
+				when bltStSubWriteWithZBuf2 =>
+				
+					if bltDmaReady = '1' then
+							
+						if dmaCh2Dout( 15 downto 0 ) < c0itZoutLatched then
+				
+							--do not write
+							bltState	<= bltReturnState;
+							
+						else
+							
+							--write new zbuf value
+							dmaCh2A								<= bltGouraudZBufferAddress;
+							dmaCh2RWn							<= '0';
+							dmaCh2Din( 15 downto 0 )		<= c0itZoutLatched;
+							
+							bltDMARequest	<= '1';
+						
+							bltState			<= bltStSubWriteWithZBuf3;
+						
+						end if;
+					
+					end if;
+						
+				when bltStSubWriteWithZBuf3 =>
+				
+					--dma ack
+					if bltDmaReady = '0' then
+					
+						bltDMARequest	<= '0';
+						bltState			<= bltStSubWriteWithZBuf4;
+						
+					end if;
+
+				when bltStSubWriteWithZBuf4 =>
+					
+					if bltDmaReady = '1' then
+					
+						--write pixel
+						bltState			<= bltStSubWrite0;
+						
+					end if;
+					
+										
+				when others =>
+				
+					bltState <= bltStIdle;
+			
+			end case; --bltState is
+	
+		end if; --reset = '1'
+	
+	end if; --rising_edge( bltClock )
+
+
+end process;
+ 
+ 
+end behavior;
+
+

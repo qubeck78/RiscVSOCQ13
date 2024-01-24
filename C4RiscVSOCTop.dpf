@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<pin_planner>
+	<pin_info>
+		<pin name="tmdsOutClk" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutClkN" >
+		</pin>
+		<pin name="tmdsOutClkN" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutClk" >
+		</pin>
+		<pin name="tmdsOutData[2]" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutDataN[2]" >
+		</pin>
+		<pin name="tmdsOutData[1]" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutDataN[1]" >
+		</pin>
+		<pin name="tmdsOutData[0]" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutDataN[0]" >
+		</pin>
+		<pin name="tmdsOutDataN[2]" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutData[2]" >
+		</pin>
+		<pin name="tmdsOutDataN[1]" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutData[1]" >
+		</pin>
+		<pin name="tmdsOutDataN[0]" direction="Output" source="Hierarchy Database" diff_pair_node="tmdsOutData[0]" >
+		</pin>
+	</pin_info>
+	<buses>
+	</buses>
+	<group_file_association>
+	</group_file_association>
+	<pin_planner_file_specifies>
+	</pin_planner_file_specifies>
+</pin_planner>
