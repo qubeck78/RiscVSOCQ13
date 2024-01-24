@@ -1,4 +1,6 @@
 vendor_name = ModelSim
+source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/C4RiscVSOCTopFlasher.cdf
+source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/C4RiscVSOCTop.cdf
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/dvid.vhd
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/TMDS_encoder.vhd
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/keyboardFifo.vhd
@@ -40,8 +42,6 @@ source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/R
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/fpSub.vhd
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/fpDiv.qip
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/fpDiv.vhd
-source_file = 1, output_files/C4RiscVSOCTop.cdf
-source_file = 1, output_files/C4RiscVSOCTopFlasher.cdf
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/divider32s.qip
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/divider32s.vhd
 source_file = 1, C:/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/keyboardFifo.qip
