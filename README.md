@@ -14,4 +14,17 @@ Contains:
 
 Contact info: qubeck78@wp.pl
 
+Shell
+![shell](./images/20240124_114053.jpg)
+
+Hardware 3D .obj rendering
+![3d](./images/20240124_112954.jpg)
+![3d](./images/20240124_113051.jpg)
+![3d](./images/20240124_113831.jpg)
+![3d](./images/20240124_113936.jpg)
+
+Anti aliased fonts
+![fonts](./images/20240124_114019.jpg)
+
+
 
