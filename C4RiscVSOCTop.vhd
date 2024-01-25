@@ -312,22 +312,29 @@ component UART
     );
 end component;
 
--- simple SPI
-component simpleSPI is
+-- SPI
+component SPI is
 port(
 
-	reset:                          	in  std_logic;
-	clock:                          	in  std_logic;
+	--cpu interface
+	reset:      in  std_logic;
+	clock:      in  std_logic;
 
-	sclk:										out std_logic;
-	mosi:										out std_logic;
-	miso:										in  std_logic;
+	a:				in 	std_logic_vector( 15 downto 0 );
+	din:			in 	std_logic_vector( 31 downto 0 );
+	dout:			out	std_logic_vector( 31 downto 0 );
 	
-	spiReady:                			out std_logic;
-   dataToSend:                     	in  std_logic_vector( 7 downto 0 );
-   dataReceived:                   	out std_logic_vector( 7 downto 0 );
-   dataToSendStrobe:               	in  std_logic
-
+	ce:			in		std_logic;
+	wr:			in		std_logic;
+	dataMask:	in		std_logic_vector( 3 downto 0 );
+	
+	ready:		out	std_logic;
+	
+	--spi interface
+	sclk:			out std_logic;
+	mosi:			out std_logic;
+	miso:			in  std_logic
+	
 );
 end component;
 
@@ -620,17 +627,12 @@ signal cpuDataMask:		std_logic_vector( 3 downto 0 );
 signal cpuDmaClock:		std_logic;
 		
 
---simple SPI signals
+--SPI signals
 signal spiClock:				std_logic;
 signal spiCE:					std_logic;
 signal spiDoutForCPU:		std_logic_vector( 31 downto 0 );
 signal spiReady:				std_logic;
 
-signal spiSerialClock:		std_logic;
-
-signal spiDataReady:				std_logic;
-signal spiDataReceived:			std_logic_vector( 7 downto 0 );
-signal spiDataToSendStrobe:	std_logic;
 signal spiSClk:					std_logic;
 signal spiMOSI:					std_logic;
 signal spiMISO:					std_logic;
@@ -815,13 +817,9 @@ gfxPllInst : gfxPll
 -- blitter clock
 	blitterClock		<= clk100;
 
--- spi clocks
 
--- cpu interface
-	spiClock				<= clk100;
-
--- serial clock ( data in/out )
-	spiSerialClock		<= clk50;
+-- spi clock
+	spiClock				<= clk50;
 
 -- fpAlu clock
 	fpAluClock			<= clk100;
@@ -1094,7 +1092,7 @@ end process;
 		
     );  
 
--- place simple SPI	
+-- place SPI	
 	
 	sdMciClk		<= spiSClk;
 	sdMciDat(3)	<= gpoRegister( 0 );	--cs
@@ -1105,20 +1103,30 @@ end process;
 	sdMciDat(2 downto 0 ) 	<= "ZZZ";
 
 	
-	simpleSPIInst:simpleSPI
-	port map(
-		reset					=> reset,
-		clock					=> spiSerialClock,
-		sclk					=> spiSClk,
-		mosi					=> spiMOSI,
-		miso					=> spiMISO,
+SPIInst:SPI
+port map(
+
+	--cpu interface
+	reset			=> reset,
+	clock			=> spiClock,
+
+	a				=> cpuAOut( 15 downto 0 ),
+	din			=> cpuDOut,
+	dout			=> spiDoutForCPU,
 	
-		spiReady				=> spiDataReady,
-		dataToSend			=> cpuDOut( 7 downto 0),
-		dataReceived		=> spiDataReceived,
-		dataToSendStrobe	=> spiDataToSendStrobe
-	);
+	ce				=> spiCE,
+	wr				=> cpuWr,
+	dataMask		=> cpuDataMask,
 	
+	ready			=> spiReady,
+	
+	--spi interface
+	sclk			=> spiSClk,
+	mosi			=> spiMOSI,
+	miso			=> spiMISO
+	
+);
+
 	
 -- place system ram ( bootloader, stack, textmode data )
 	systemRAMInst: systemRAM 
@@ -1278,15 +1286,12 @@ begin
 			dmaDisplayPointerStart	<= ( others => '0' );
 			gpoRegister					<= ( others => '1' );
 			
-			spiDataToSendStrobe			<= '0';
 			tickTimerReset					<= '0';
-			
-			
+						
 			registerState					<= rsWaitForRegAccess;
 
 		else
 		
-			spiDataToSendStrobe			<= '0';
 			tickTimerReset					<= '0';
 			frameTimerReset				<= '0';
 			
@@ -1325,24 +1330,7 @@ begin
 									dmaDisplayPointerStart	<= cpuDOut( 20 downto 0 );
 								
 								end if;
-					
-							
-							--rw 0xf0000014 - spi0Data
-							when x"05" =>
-					
-								registersDoutForCPU	<= x"0000" &  x"00" & spiDataReceived;
-								
-								if cpuWr = '1' then
-								
-									spiDataToSendStrobe	<= '1';
-								
-								end if;
-								
-							--rw 0xf0000018 - spi0Status
-							when x"06" =>
-					
-								registersDoutForCPU	<= x"0000" & "000000000000000" & spiDataReady;
-								
+													
 							--rw 0xf000001c - gpoPort
 							when x"07" =>
 					

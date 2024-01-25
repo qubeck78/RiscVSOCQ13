@@ -32,10 +32,10 @@ typedef struct _BSP_T
 	volatile unsigned long  dmaDisplayPointerStart;
 	
 	//wr - send data via spi, rd - read received data
-	volatile unsigned long spiData;
+	volatile unsigned long _unused2;
 	
 	//rd b0 - spiReady
-	volatile unsigned long spiStatus;
+	volatile unsigned long _unused3;
 	
 	//wr b7, b6, b5, b4 - LEDS, b0 - spi0SSel
 	volatile unsigned long gpoPort;
@@ -207,6 +207,18 @@ typedef struct __UART_REGISTERS_T
 }_UART_REGISTERS_T;
 
 extern _UART_REGISTERS_T *uart0;
+
+typedef struct __SPI_REGISTERS_T
+{
+	//wr - send data via spi, rd - read received data
+	volatile unsigned long spiData;
+	
+	//rd b0 - spiReady
+	volatile unsigned long spiStatus;
+
+}_SPI_REGISTERS_T;
+
+extern _SPI_REGISTERS_T *spi0;
 
 
 int 	bspInit( void );

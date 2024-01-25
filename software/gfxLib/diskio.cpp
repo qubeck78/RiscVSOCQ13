@@ -52,7 +52,7 @@
 #define WP          (0)         /* Card is write protected (yes:true, no:false, default:false) */
 
 
-extern BSP_T *bsp;	//registers base address
+//extern BSP_T *bsp;	//registers base address
 
 
 
@@ -129,9 +129,9 @@ void xmit_mmc (
 
 		do
 		{
-		}while( ! ( bsp->spiStatus & 1 ) );
+		}while( ! ( spi0->spiStatus & 1 ) );
 		
-		bsp->spiData = d;
+		spi0->spiData = d;
 		
     } while (--bc);
 }
@@ -157,15 +157,15 @@ void rcvr_mmc (
 	
 		do
 		{
-		}while( ! ( bsp->spiStatus & 1 ) );
+		}while( ! ( spi0->spiStatus & 1 ) );
 		
-		bsp->spiData = 0xff;
+		spi0->spiData = 0xff;
 		
 		do
 		{
-		}while( ! ( bsp->spiStatus & 1 ) );
+		}while( ! ( spi0->spiStatus & 1 ) );
 
-        *buff++ = bsp->spiData;            /* Store a received byte */
+        *buff++ = spi0->spiData;            /* Store a received byte */
 
     } while (--bc);
 }
