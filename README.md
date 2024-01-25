@@ -27,5 +27,6 @@ Hardware 3D .obj rendering
 Anti aliased fonts
 ![fonts](./images/20240124_114019.jpg)
 
-
+Displaying bitmaps/jpegs from SD
+![slideshow](./images/20240124_175610.jpg)
 
