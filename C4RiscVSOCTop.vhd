@@ -289,6 +289,65 @@ component picorv32 is
 );
 end component;
 
+-- static ram controller and dma
+component sramController is
+port(
+
+	reset:      in  std_logic;
+	clock:      in  std_logic;
+
+
+	--gfx display mode interface ( ch0 )
+	ch0DmaRequest:			in  std_logic_vector( 1 downto 0 );
+	ch0DmaPointerStart:	in  std_logic_vector( 20 downto 0 );
+	ch0DmaPointerReset:	in  std_logic;
+	
+	ch0BufClk:				in  std_logic;
+	ch0BufDout:				out std_logic_vector( 31 downto 0 );
+	ch0BufA:					in  std_logic_vector( 8 downto 0 );
+	
+	
+	--audio interface ( ch1 )
+	
+	--tbd
+	
+	
+	--blitter interface ( ch2 )
+	ch2DmaRequest:	in  std_logic;
+	ch2A:				in  std_logic_vector( 21 downto 0 );
+	ch2Din:			in  std_logic_vector( 31 downto 0 );
+	ch2Dout:			out std_logic_vector( 31 downto 0 );
+	ch2RWn:			in  std_logic;
+	ch2WordSize:	in  std_logic;
+	ch2DataMask:	in  std_logic_vector( 1 downto 0 );
+	ch2Ready:		out std_logic;
+	
+	
+	--cpu interface ( ch3 )
+	a:				in  std_logic_vector( 20 downto 0 );
+	din:			in  std_logic_vector( 31 downto 0 );
+	dout:			out std_logic_vector( 31 downto 0 );
+	
+	ce:			in  std_logic;
+	wr:			in  std_logic;
+	dataMask:	in  std_logic_vector( 3 downto 0 );
+	
+	ready:		out std_logic;	
+	
+	
+	--static ram interface
+	gds0_7n:		out std_logic;
+	gds8_15n:	out std_logic;
+	gds16_23n:	out std_logic;
+	gds24_31n:	out std_logic;
+		
+	gwen:			out std_logic;
+	goen:			out std_logic;
+
+	ga:			out	std_logic_vector( 20 downto 0 );
+	gd:			inout std_logic_vector( 31 downto 0 )
+);
+end component;
 
 -- UART
 component UART
@@ -852,18 +911,18 @@ fontPromInst: fontProm
 
 -- place gfx pixel gen buf ram
 	
-	gfxBufRAMInst: gfxBufRam
-	port map(
-
-		rdclock		=> not pgClock,
-		rdaddress	=> gfxBufRamRdA,
-		q				=> gfxBufRamDOut,
-
-		wrclock		=> dmaClock,
-		wren			=> gfxBufRamWe,
-		wraddress	=> gfxBufRamWrA,
-		data			=> gfxBufRamDIn
-	);
+--	gfxBufRAMInst: gfxBufRam
+--	port map(
+--
+--		rdclock		=> not pgClock,
+--		rdaddress	=> gfxBufRamRdA,
+--		q				=> gfxBufRamDOut,
+--
+--		wrclock		=> dmaClock,
+--		wren			=> gfxBufRamWe,
+--		wraddress	=> gfxBufRamWrA,
+--		data			=> gfxBufRamDIn
+--	);
 
 		
 	--place txt pixel gen
@@ -1403,637 +1462,63 @@ begin
 end process;
 
 
+-- place static ram controller and DMA
 
---direct memory access
+sramControllerInst:sramController
+port map(
 
-	dmaRequest( 0 ) 	<= pggDMARequest( 0 );
-	dmaRequest( 1 ) 	<= pggDMARequest( 1 );
+	reset						=> reset,
+	clock						=> dmaClock,
 
---ch2 connected to blitter instance
+	--gfx display mode interface ( ch0 )
+	ch0DmaRequest			=> pggDMARequest,
+	ch0DmaPointerStart	=> dmaDisplayPointerStart,
+	ch0DmaPointerReset	=> pgVSync,
 	
-	dmaRequest( 3 ) 	<= dmaMemoryCE;	
-	cpuDmaReady			<= dmaReady( 3 );
+	ch0BufClk				=> not pgClock,
+	ch0BufDout				=> gfxBufRamDOut,
+	ch0BufA					=> gfxBufRamRdA,
+	
+	
+	--audio interface ( ch1 )
+	
+	--tbd
 	
 
+	--blitter interface ( ch2 )
+	ch2DmaRequest		=> dmaRequest( 2 ),
+	ch2A					=> dmaCh2A,
+	ch2Din				=> dmaCh2Din,
+	ch2Dout				=> dmaCh2Dout,
+	ch2RWn				=> dmaCh2RWn,
+	ch2WordSize			=> dmaCh2TransferSize,
+	ch2DataMask			=> dmaCh2TransferMask,
+	ch2Ready				=> dmaReady( 2 ),
 	
-dmaProcess:	process( all )
-
-begin
-
-	if rising_edge( dmaClock ) then
-
-		if reset = '1' then
+	
+	--cpu interface ( ch3 )
+	a				=> cpuAOut( 20 downto 0 ),
+	din			=> cpuDOut,
+	dout			=> dmaDoutForCPU,
+	
+	ce				=> dmaMemoryCE,
+	wr				=> cpuWr,
+	dataMask		=> cpuDataMask,	
+	ready			=> cpuDmaReady,
+	
+	
+	--static ram interface
+	gds0_7n		=> gds0_7n,
+	gds8_15n		=> gds8_15n,
+	gds16_23n	=> gds16_23n,
+	gds24_31n	=> gds24_31n,
 		
-			dmaReady( 2 downto 0 )	<= "111";
-			dmaReady( 3 )				<= '0';		--cpu channel dma logic is different ( adjusted to cpu requirements )
-			dmaDisplayPointer			<= ( others => '0' );
-			dmaDisplayBufferPointer	<= ( others => '0' );
-			dmaRequestReg				<= ( others => '0' );
-			dmaDoutForCpu				<= ( others => '0' );
-			
-			dmaState						<= dmaIdle;
-			
-			--static ram signals
-			gds0_7n		<= '1';
-			gds8_15n		<= '1';
-			gds16_23n	<= '1';
-			gds24_31n	<= '1';
-			gwen			<= '1';
-			goen			<= '1';
+	gwen			=> gwen,
+	goen			=> goen,
 
-			ga				<= ( others => '0' );
-			gd				<= ( others => 'Z' );
-
-			--gfx buf ram signals
-			gfxBufRamWe		<= '0';
-			gfxBufRamWrA	<= ( others => '0' );
-			gfxBufRamDIn	<= ( others => '0' );
-
-			--ch2 signals
-			dmaCh2Dout		<= ( others => '0' );
-			
-		else
-		
-		
-			if pgVSync = '1' then
-			
-				dmaDisplayPointer	<= dmaDisplayPointerStart;
-			
-			end if;
-			
-			if dmaRequest( 0 ) = '1' then
-				dmaRequestReg( 0 ) <= '1';
-			end if;
-			
-			if dmaRequest( 1 ) = '1' then
-				dmaRequestReg( 1 ) <= '1';
-			end if;
-			
-			if dmaRequest( 2 ) = '1' then
-				dmaRequestReg( 2 ) <= '1';
-			end if;
-			
-			if dmaRequest( 3 ) = '1' then
-				dmaRequestReg( 3 ) <= '1';
-			end if;
-			
-			
-			case dmaState is
-			
-				when dmaIdle =>
-				
-					--hold cpu
-					dmaReady( 3 )	<= '0';
-				
-					--gfx lower line
-					if dmaRequestReg( 0 ) = '1' then
-					
-						dmaReady( 0 ) 				<= '0';
-						
-						dmaDisplayBufferPointer	<= "000000000";
-						dmaTransferCounter		<= x"a0";		--160 long words
-						
-						ga								<= dmaDisplayPointer( 20 downto 0 );				
-						gd								<= ( others => 'Z' );
-
-						dmaState	<= dmaGfxFetch0;
-			
-					--gfx upper line
-					elsif dmaRequestReg( 1 ) = '1' then
-			
-						dmaReady( 1 ) <= '0';
-						
-						dmaDisplayBufferPointer	<= "100000000";
-						dmaTransferCounter		<= x"a0";		--160 long words
-						
-						ga								<= dmaDisplayPointer( 20 downto 0 );				
-						gd								<= ( others => 'Z' );
-						
-						dmaState						<= dmaGfxFetch0;
-			
-					--blitter 16/32 bit
-					elsif dmaRequestReg( 2 ) = '1' then
-					
-						dmaReady( 2 ) <= '0';
-						
-						if dmaCh2TransferSize = '0' then
-						
-							--16bit transfer
-							
-							ga	<= dmaCh2A( 21 downto 1 );
-						
-
-							if dmaCh2A( 0 ) = '0' then
-															
-								gds0_7n		<= '0';
-								gds8_15n		<= '0';	
-								gds16_23n	<= '1';
-								gds24_31n	<= '1';
-															
-							else
-															
-								gds0_7n		<= '1';
-								gds8_15n		<= '1';
-								gds16_23n	<= '0';
-								gds24_31n	<= '0';	
-								
-							end if;					
-						
-							if dmaCh2RWn = '1' then
-							
-								--read
-								gd					<= ( others => 'Z' );
-								gwen				<= '1';
-								goen				<= '0';
-							
-								dmaState			<= dmaCh2Read0;
-							
-							else
-							
-								--write
-								if dmaCh2A( 0 ) = '0' then
-							
-									gd( 15 downto 0 ) <= dmaCh2Din( 15 downto 0 );
-
-								else
-									gd( 31 downto 16 ) <= dmaCh2Din( 15 downto 0 );
-							
-								end if;
-
-								gwen				<= '1';
-								goen				<= '1';
-							
-								dmaState			<= dmaCh2Write0;
-							
-							end if; --dmaCh2RWn ='1'
-							
-						else	
-							
-							--32 bit transfer
-							
-							ga	<= dmaCh2A( 20 downto 0 );
-						
-															
-							gds0_7n		<= '0';
-							gds8_15n		<= '0';	
-							gds16_23n	<= '0';
-							gds24_31n	<= '0';
-															
-																							
-							if dmaCh2RWn = '1' then
-							
-								--read
-								gd					<= ( others => 'Z' );
-								gwen				<= '1';
-								goen				<= '0';
-							
-								dmaState			<= dmaCh2Read32_0;
-							
-							else
-							
-								--write							
-								gd 				<= dmaCh2Din;
-
-								gwen				<= '1';
-								goen				<= '1';
-							
-								dmaState			<= dmaCh2Write32_0;
-							
-							end if; --dmaCh2RWn ='1'
-							
-							
-						end if; --dmach2TransferSize = '0'
-						
-					--cpu
-					elsif dmaRequest( 3 ) = '1' then
-					
-						dmaReady( 3 )	<= '0';
-					
-						--write						
-						if cpuWr = '1' then
-							
-							dmaReady( 3 ) 	<= '0';
-							ga					<= cpuAOut( 20 downto 0 );
-							gd					<= cpuDOut;
-								
-							
-							gds0_7n		<= not cpuDataMask( 0 );
-							gds8_15n		<= not cpuDataMask( 1 );	
-							gds16_23n	<= not cpuDataMask( 2 );
-							gds24_31n	<= not cpuDataMask( 3 );
-								
-							gwen				<= '1';
-							goen				<= '1';
-						
-							
-							dmaState		<= dmaCpuWrite0;
-							
-						else
-						
-						--read
-						
-							dmaReady( 3 ) 	<= '0';
-							ga					<= cpuAOut( 20 downto 0 );
-							gd					<= ( others => 'Z' );
-							gwen				<= '1';
-							goen				<= '0';
-							
-															
-							gds0_7n		<= '0';
-							gds8_15n		<= '0';	
-							gds16_23n	<= '1';
-							gds24_31n	<= '1';
-									
-																									
-							dmaState		<= dmaCpuRead1;
-					
-						end if;	--cpuMrL = '1' or cpuMrH = '1'
-					
-				
-				
-					end if; --dmaRequest( 3 ) = '1'
-			
-			when dmaCh2Read0 =>
-			
-				dmaState		<= dmaCh2Read2; -- skip waitstates
-			
-			when dmaCh2Read1 =>
-			
-				
-				dmaState	<= dmaCh2Read2;
-
-			when dmaCh2Read2 =>
-			
-				dmaState	<= dmaCh2Read3;
-				
-				
-			when dmaCh2Read3 =>
-			
-				if dmaCh2A( 0 ) = '0' then
-				
-					dmaCh2Dout( 15 downto 0 )	<= gd( 15 downto 0 );
-					
-				else
-				
-					dmaCh2Dout( 15 downto 0 )	<= gd( 31 downto 16 );
-					
-				end if;
-				
-				
-				dmaRequestReg( 2 ) 	<= '0';
-				dmaReady( 2 )			<= '1';
-				
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-
-				dmaState	<= dmaIdle;
-				
-			when dmaCh2Write0	=>
-			
-				gwen		<= '0';
-				
-				dmaState	<= dmaCh2Write2;	
-
-			when dmaCh2Write1	=>
-				
-				gwen		<= '1';
-				
-				dmaState	<= dmaCh2Write2;
-				
-			when dmaCh2Write2 =>
-
-			
-				gwen			<= '1';
-			
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-				
-				gd				<= ( others => 'Z' );
-				
-				dmaState	<= dmaCh2Write3;
-
-			when dmaCh2Write3 =>
-				
-				gwen			<= '1';
-			
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-				
-				gd				<= ( others => 'Z' );
-				
-				dmaReady( 2 ) 			<= '1';
-				dmaRequestReg( 2 )	<= '0';
-				dmaState					<= dmaIdle;			
-
-			when dmaCh2Read32_0 =>
-			
-				dmaState		<= dmaCh2Read32_1; 
-			
-			when dmaCh2Read32_1 =>
-			
-				
-				dmaState	<= dmaCh2Read32_2;
-
-			when dmaCh2Read32_2 =>
-			
-				dmaState	<= dmaCh2Read32_3;
-				
-				
-			when dmaCh2Read32_3 =>
-			
-				dmaCh2Dout	<= gd;				
-				
-				dmaRequestReg( 2 ) 	<= '0';
-				dmaReady( 2 )			<= '1';
-				
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-
-				dmaState	<= dmaIdle;				
-
-			when dmaCh2Write32_0	=>
-			
-				gwen		<= '0';
-				
-				dmaState	<= dmaCh2Write32_1;	
-
-			when dmaCh2Write32_1	=>
-				
-				gwen		<= '1';
-				
-				dmaState	<= dmaCh2Write32_3;
-				
-			when dmaCh2Write32_2 =>
-
-			
-				gwen			<= '1';
-			
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-				
-				gd				<= ( others => 'Z' );
-				
-				dmaState	<= dmaCh2Write32_3;
-
-			when dmaCh2Write32_3 =>
-				
-				gwen			<= '1';
-			
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-				
-				gd				<= ( others => 'Z' );
-				
-				dmaReady( 2 ) 			<= '1';
-				dmaRequestReg( 2 )	<= '0';
-				dmaState					<= dmaIdle;			
-				
-			when dmaCpuRead0 =>
-			
-				dmaState		<= dmaCpuRead1; 
-			
-			when dmaCpuRead1 =>
-			
-				
-				dmaState	<= dmaCpuRead2;
-
-			when dmaCpuRead2 =>
-			
-				
-				dmaState	<= dmaCpuRead3;
-
-			when dmaCpuRead3 =>
-			
-				dmaDoutForCpu( 15 downto 0 )	<= gd( 15 downto 0 );
-
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '0';
-				gds24_31n	<= '0';
-
-				dmaState	<= dmaCpuRead4;
-				
-				
-			when dmaCpuRead4 =>
-			
-				
-				dmaState	<= dmaCpuRead5;
-					
-			when dmaCpuRead5 =>
-			
-				
-				dmaState	<= dmaCpuRead6;
-				
-			when dmaCpuRead6 =>
-			
-				
-				dmaState	<= dmaCpuRead7;
-				
-			when dmaCpuRead7 =>
-			
-				dmaDoutForCpu( 31 downto 16 )	<= gd( 31 downto 16 );
-
-				dmaRequestReg( 3 ) 	<= '0';
-				dmaReady( 3 )			<= '1';
-				
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-
-				dmaState	<= dmaCpuRead8;
-				
-			when dmaCpuRead8 =>
-			
-				if dmaRequest( 3 ) = '0' then
-				
-					dmaReady( 3 )	<= '0';
-					dmaState			<= dmaIdle;
-				
-				end if;
-					
-			when dmaCpuWrite0	=>
-			
-			
-				gwen		<= '1';
-				
-				dmaState	<= dmaCpuWrite1;	
-
-			when dmaCpuWrite1	=>
-				
-				gwen		<= '0';
-				
-				dmaState	<= dmaCpuWrite4;	-- skip waitstates
-
-			when dmaCpuWrite2	=>
-				
-				gwen		<= '0';
-				
-				dmaState	<= dmaCpuWrite3;	
-				
-			when dmaCpuWrite3 =>
-	
-				--static ram signals
-				gwen			<= '1';
-				
-				
-				dmaState	<= dmaCpuWrite4;
-
-			when dmaCpuWrite4 =>
-				
-				gwen			<= '1';
-			
-				--static ram signals
-				gds0_7n		<= '1';
-				gds8_15n		<= '1';
-				gds16_23n	<= '1';
-				gds24_31n	<= '1';
-				gwen			<= '1';
-				goen			<= '1';
-				
-				gd				<= ( others => 'Z' );
-				
-				dmaReady( 3 ) 			<= '1';
-				dmaRequestReg( 3 )	<= '0';
-				dmaState					<= dmaCpuWrite5;
-				
-			when dmaCpuWrite5 =>
-			
-				if dmaRequest( 3 ) = '0' then
-				
-					dmaReady( 3 )	<= '0';
-					dmaState			<= dmaIdle;
-				
-				end if;
-				
-			when dmaGfxFetch0 =>
-		
-				gfxBufRamWe		<= '0';
-	
-				dmaTransferCounter		<= dmaTransferCounter - 1;
-				
-				ga								<= dmaDisplayPointer( 20 downto 0 );
-				
-				dmaDisplayPointer			<= dmaDisplayPointer	+ 1;
-				
-				gd								<= ( others => 'Z' );
-				
-					
-				gds0_7n						<= '0';
-				gds8_15n						<= '0';
-				gds16_23n					<= '0';
-				gds24_31n					<= '0';
-				
-				
-				gwen							<= '1';
-				goen							<= '0';
-			
-				gfxBufRamWe					<= '0';
-				gfxBufRamWrA				<= dmaDisplayBufferPointer;
-				
-				dmaDisplayBufferPointer	<= dmaDisplayBufferPointer + 1;
-				
-				dmaState						<= dmaGfxFetch1;
-				
-			when dmaGfxFetch1	=>
-			
-				
-				dmaState	<= dmaGfxFetch2;
-				
-				
-				
-			when dmaGfxFetch2	=>
-			
-				
-				dmaState	<= dmaGfxFetch3;
-				
-				
-			when dmaGfxFetch3 =>
-			
-				gfxBufRamDIn	<= gd;
-				
-				gfxBufRamWe		<= '1';
-
-				
-				if dmaTransferCounter = x"00" then
-				
-					--static ram signals
-					gds0_7n					<= '1';
-					gds8_15n					<= '1';
-					gds16_23n				<= '1';
-					gds24_31n				<= '1';
-					gwen						<= '1';
-					goen						<= '1';
-
-					ga							<= ( others => '0' );
-					gd							<= ( others => 'Z' );
-
-					dmaReady( 0 ) 			<= '1';
-					dmaReady( 1 ) 			<= '1';
-					dmaRequestReg( 0 )	<= '0';
-					dmaRequestReg( 1 )	<= '0';
-					
-					dmaState	<= dmaGfxFetch4;
-					
-				else
-				
-					dmaState	<= dmaGfxFetch0;
-				
-				end if;
-			
-			when dmaGfxFetch4 =>
-			
-				gfxBufRamWe		<= '0';
-
-				dmaState	<= dmaIdle;
-				
-				
-			when others =>
-				
-				
-					dmaState	<= dmaIdle;
-			
-			end case;
-			
-		
-		end if;
-	
-	end if;
-
-end process;
+	ga				=> ga,
+	gd				=> gd
+);
 
 
 --tick timer process

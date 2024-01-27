@@ -8,8 +8,6 @@ use altera_mf.altera_mf_components.all;
 
 
 entity sramController is
-
-
 port(
 
 	reset:      in  std_logic;
@@ -38,7 +36,7 @@ port(
 	ch2Dout:			out std_logic_vector( 31 downto 0 );
 	ch2RWn:			in  std_logic;
 	ch2WordSize:	in  std_logic;
-	ch2DataMask:	in  std_logic;
+	ch2DataMask:	in  std_logic_vector( 1 downto 0 );
 	ch2Ready:		out std_logic;
 	
 	
@@ -116,7 +114,23 @@ signal ch0DmaBufPointer:		std_logic_vector( 8 downto 0 );
 --ch0 doesn't have handshake, so requests have to be latched
 signal ch0DmaRequestLatched:	std_logic_vector( 1 downto 0 );
 
+--ch2 request has to be latched
+signal ch2DmaRequestLatched:	std_logic;
+
 begin
+
+gfxBufRAMInst: gfxBufRam
+port map(
+
+	rdclock		=> ch0BufClk,
+	rdaddress	=> ch0BufA,
+	q				=> ch0BufDout,
+
+	wrclock		=> clock,
+	wren			=> ch0BufRamWe,
+	wraddress	=> ch0BufRamWrA,
+	data			=> ch0BufRamDIn
+);
 
 
 dmaMain: process( all )
@@ -157,6 +171,7 @@ begin
 			ch0TransferCounter	<= ( others => '0' );
 
 			ch0DmaRequestLatched	<= "00";
+			ch2DmaRequestLatched	<= '0';
 			
 			dmaState	<= dmaIdle;
 			
@@ -175,6 +190,11 @@ begin
 				
 			end if;
 
+			if ch2DmaRequest = '1' then
+			
+				ch2DmaRequestLatched	<= '1';
+			
+			end if;
 			
 			--reset ch0 dma pointer if requested
 			if ch0DmaPointerReset = '1' then
@@ -213,7 +233,7 @@ begin
 						dmaState	<= dmaGfxFetch0;
 					
 					--ch2 request 
-					elsif ch2DmaRequest = '1' then
+					elsif ch2DmaRequestLatched = '1' then
 	
 						ch2Ready	<= '0';
 						
@@ -311,7 +331,7 @@ begin
 						if wr = '1' then
 							
 							ga				<= a( 20 downto 0 );
-							gd				<= dout;
+							gd				<= din;
 								
 							
 							gds0_7n		<= not dataMask( 0 );
@@ -342,18 +362,240 @@ begin
 																									
 							dmaState		<= dmaCpuRead1;
 					
-						end if;	--cpuMrL = '1' or cpuMrH = '1'
+						end if;	
 					
 					end if;
 			
 			
 				--ch0
+				when dmaGfxFetch0 =>
+		
+					ch0BufRamWe					<= '0';
+	
+					ch0TransferCounter		<= ch0TransferCounter - 1;
+				
+					ga								<= ch0DmaPointer( 20 downto 0 );
+				
+					ch0DmaPointer				<= ch0DmaPointer	+ 1;
+				
+					gd								<= ( others => 'Z' );
+				
+					gds0_7n						<= '0';
+					gds8_15n						<= '0';
+					gds16_23n					<= '0';
+					gds24_31n					<= '0';
+				
+					gwen							<= '1';
+					goen							<= '0';
+			
+					ch0BufRamWe					<= '0';
+					ch0BufRamWrA				<= ch0DmaBufPointer;
+				
+					ch0DmaBufPointer			<= ch0DmaBufPointer + 1;
+				
+					dmaState						<= dmaGfxFetch1;
+				
+				when dmaGfxFetch1	=>
+			
+					dmaState	<= dmaGfxFetch2;
+						
+				when dmaGfxFetch2	=>
+			
+					dmaState	<= dmaGfxFetch3;
+				
+				when dmaGfxFetch3 =>
+			
+					ch0BufRamDIn	<= gd;
+								
+					ch0BufRamWe		<= '1';
+					
+					if ch0TransferCounter = x"00" then
+				
+						--static ram signals
+						gds0_7n							<= '1';
+						gds8_15n							<= '1';
+						gds16_23n						<= '1';
+						gds24_31n						<= '1';
+						gwen								<= '1';
+						goen								<= '1';
+
+						ga									<= ( others => '0' );
+						gd									<= ( others => 'Z' );
+
+						ch0DmaRequestLatched( 0 )	<= '0';
+						ch0DmaRequestLatched( 1 )	<= '0';
+					
+						dmaState	<= dmaGfxFetch4;
+					
+					else
+				
+						dmaState	<= dmaGfxFetch0;
+				
+					end if;
+			
+				when dmaGfxFetch4 =>
+			
+					ch0BufRamWe		<= '0';
+
+					dmaState	<= dmaIdle;				
+
+			
+				--ch2
+				when dmaCh2Read0 =>
+			
+					dmaState		<= dmaCh2Read2; -- skip waitstates
+			
+				when dmaCh2Read1 =>
+			
+				
+					dmaState	<= dmaCh2Read2;
+
+				when dmaCh2Read2 =>
+			
+					dmaState	<= dmaCh2Read3;
 				
 				
+				when dmaCh2Read3 =>
 			
+					if ch2A( 0 ) = '0' then
+				
+						ch2Dout( 15 downto 0 )	<= gd( 15 downto 0 );
+					
+					else
+				
+						ch2Dout( 15 downto 0 )	<= gd( 31 downto 16 );
+					
+					end if;
+					
+					ch2Ready					<= '1';
+					ch2DmaRequestLatched	<= '0';
+					
+					gds0_7n		<= '1';
+					gds8_15n		<= '1';
+					gds16_23n	<= '1';
+					gds24_31n	<= '1';
+					gwen			<= '1';
+					goen			<= '1';
+
+					dmaState	<= dmaIdle;
+				
+				when dmaCh2Write0	=>
 			
+					gwen		<= '0';
+				
+					dmaState	<= dmaCh2Write2;	
+
+				when dmaCh2Write1	=>
+				
+					gwen		<= '1';
+				
+					dmaState	<= dmaCh2Write2;
+				
+				when dmaCh2Write2 =>
+				
+					gwen			<= '1';
 			
+					gds0_7n		<= '1';
+					gds8_15n		<= '1';
+					gds16_23n	<= '1';
+					gds24_31n	<= '1';
+					gwen			<= '1';
+					goen			<= '1';
+				
+					gd				<= ( others => 'Z' );
+				
+					dmaState	<= dmaCh2Write3;
+
+				when dmaCh2Write3 =>
+				
+					gwen			<= '1';
 			
+					gds0_7n		<= '1';
+					gds8_15n		<= '1';
+					gds16_23n	<= '1';
+					gds24_31n	<= '1';
+					gwen			<= '1';
+					goen			<= '1';
+				
+					gd				<= ( others => 'Z' );
+				
+					ch2Ready					<= '1';
+					ch2DmaRequestLatched	<= '0';
+					
+					dmaState		<= dmaIdle;			
+
+				when dmaCh2Read32_0 =>
+			
+					dmaState		<= dmaCh2Read32_1; 
+			
+				when dmaCh2Read32_1 =>
+			
+					dmaState	<= dmaCh2Read32_2;
+
+				when dmaCh2Read32_2 =>
+			
+					dmaState	<= dmaCh2Read32_3;
+				
+				when dmaCh2Read32_3 =>
+			
+					ch2Dout	<= gd;				
+
+					ch2Ready					<= '1';
+					ch2DmaRequestLatched	<= '0';
+				
+					gds0_7n		<= '1';
+					gds8_15n		<= '1';
+					gds16_23n	<= '1';
+					gds24_31n	<= '1';
+					gwen			<= '1';
+					goen			<= '1';
+
+					dmaState	<= dmaIdle;				
+
+				when dmaCh2Write32_0	=>
+			
+					gwen		<= '0';
+				
+					dmaState	<= dmaCh2Write32_1;	
+
+				when dmaCh2Write32_1	=>
+				
+					gwen		<= '1';
+				
+					dmaState	<= dmaCh2Write32_3;
+				
+				when dmaCh2Write32_2 =>
+				
+					gwen			<= '1';
+			
+					gds0_7n		<= '1';
+					gds8_15n		<= '1';
+					gds16_23n	<= '1';
+					gds24_31n	<= '1';
+					gwen			<= '1';
+					goen			<= '1';
+				
+					gd				<= ( others => 'Z' );
+				
+					dmaState	<= dmaCh2Write32_3;
+
+				when dmaCh2Write32_3 =>
+				
+					gwen			<= '1';
+			
+					gds0_7n		<= '1';
+					gds8_15n		<= '1';
+					gds16_23n	<= '1';
+					gds24_31n	<= '1';
+					gwen			<= '1';
+					goen			<= '1';
+				
+					gd				<= ( others => 'Z' );
+
+					ch2Ready					<= '1';
+					ch2DmaRequestLatched	<= '0';
+					
+					dmaState		<= dmaIdle;				
 			
 				--ch3
 				when dmaCpuRead0 =>
@@ -455,7 +697,7 @@ begin
 					gd				<= ( others => 'Z' );
 				
 					ready			<= '1';
-					dmaState					<= dmaCpuWrite5;
+					dmaState		<= dmaCpuWrite5;
 				
 				when dmaCpuWrite5 =>
 			
