@@ -16,22 +16,22 @@ generic(
 );
 
 port(
-	--cpu interface
-	reset:				in  	std_logic;
-	clock:				in  	std_logic;
-	a:						in 	std_logic_vector( 15 downto 0 );
-	din:					in 	std_logic_vector( 31 downto 0 );
-	dout:					out	std_logic_vector( 31 downto 0 );
-	
-	ce:					in		std_logic;
-	wr:					in		std_logic;
-	dataMask:			in		std_logic_vector( 3 downto 0 );
-	
-	ready:				out	std_logic;
-	
-	--uart interface
-	uartTXD:				out std_logic;
-   uartRXD:				in  std_logic
+   --cpu interface
+   reset:            in    std_logic;
+   clock:            in    std_logic;
+   a:                in    std_logic_vector( 15 downto 0 );
+   din:              in    std_logic_vector( 31 downto 0 );
+   dout:             out   std_logic_vector( 31 downto 0 );
+   
+   ce:               in    std_logic;
+   wr:               in    std_logic;
+   dataMask:         in    std_logic_vector( 3 downto 0 );
+   
+   ready:            out   std_logic;
+   
+   --uart interface
+   uartTXD:          out std_logic;
+   uartRXD:          in  std_logic
 
 );
 
@@ -44,16 +44,16 @@ constant baudCounterHalf         : integer := baudCounterMax / 2;
 constant baudCounterRxStartBit   : integer := baudCounterMax + baudCounterHalf;
 
 component uartFiFo IS
-	PORT
-	(
-		clock		: IN STD_LOGIC ;
-		data		: IN STD_LOGIC_VECTOR (7 DOWNTO 0);
-		rdreq		: IN STD_LOGIC ;
-		wrreq		: IN STD_LOGIC ;
-		empty		: OUT STD_LOGIC ;
-		full		: OUT STD_LOGIC ;
-		q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
-	);
+   PORT
+   (
+      clock    : IN STD_LOGIC ;
+      data     : IN STD_LOGIC_VECTOR (7 DOWNTO 0);
+      rdreq    : IN STD_LOGIC ;
+      wrreq    : IN STD_LOGIC ;
+      empty    : OUT STD_LOGIC ;
+      full     : OUT STD_LOGIC ;
+      q     : OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+   );
 END component;
 
 
@@ -83,12 +83,12 @@ signal dataReceivedReadAcknowledge:    std_logic;
 
 --registers signals
 type uartRegState_T is ( urWaitForRegAccess, urWaitForBusCycleEnd );
-signal uartRegState:			uartRegState_T;
+signal uartRegState:       uartRegState_T;
 
 --fifo signals
 
-signal rxFiFoEmpty:			std_logic;
-signal rxFiFoWrReq:			std_logic;
+signal rxFiFoEmpty:        std_logic;
+signal rxFiFoWrReq:        std_logic;
 
 
 component inputSync
@@ -114,94 +114,94 @@ begin
 registers: process( all )
 begin
 
-	if rising_edge( clock ) then
-	
-		if reset = '1' then
-		
-			--clear uart write strobe and read ack
-			dataToSendStrobe         		<= '0';
-			dataReceivedReadAcknowledge	<= '0';
+   if rising_edge( clock ) then
+   
+      if reset = '1' then
+      
+         --clear uart write strobe and read ack
+         dataToSendStrobe              <= '0';
+         dataReceivedReadAcknowledge   <= '0';
 
-			ready									<= '0';	
-			uartRegState						<= urWaitForRegAccess;				
-			
-		else
-		
-		
-			--clear uart write strobe and read ack
-			dataToSendStrobe					<= '0';
-			dataReceivedReadAcknowledge	<= '0';
+         ready                         <= '0';  
+         uartRegState                  <= urWaitForRegAccess;           
+         
+      else
+      
+      
+         --clear uart write strobe and read ack
+         dataToSendStrobe              <= '0';
+         dataReceivedReadAcknowledge   <= '0';
 
-			
-			case uartRegState is
-	
-				when urWaitForRegAccess =>
-			
-					if ce = '1' then
-					
-						--cpu wants to access registers
-					
-						ready <= '0';
-						
-						case a( 7 downto 0 ) is
-						
-						--0x00 rw - uartData
-						when x"00" =>
-						
-								if wr = '0' then
-									
-									dout	<= x"000000" & dataReceived;
-							
-									dataReceivedReadAcknowledge	<= '1';
-								
-								else	-- wr = '1'
-								
-									dataToSend				<= din( 7 downto 0 );
-									
-									dataToSendStrobe		<= '1';
-									
-								end if;
+         
+         case uartRegState is
+   
+            when urWaitForRegAccess =>
+         
+               if ce = '1' then
+               
+                  --cpu wants to access registers
+               
+                  ready <= '0';
+                  
+                  case a( 7 downto 0 ) is
+                  
+                  --0x00 rw - uartData
+                  when x"00" =>
+                  
+                        if wr = '0' then
+                           
+                           dout  <= x"000000" & dataReceived;
+                     
+                           dataReceivedReadAcknowledge   <= '1';
+                        
+                        else  -- wr = '1'
+                        
+                           dataToSend           <= din( 7 downto 0 );
+                           
+                           dataToSendStrobe     <= '1';
+                           
+                        end if;
 
-								ready	<= '1';
+                        ready <= '1';
 
-							--0x04 r- uartStatus							
-							when x"01" =>
-							
-								dout 						<= x"000000" & "000000" & dataSenderReady & dataReceivedReady;
+                     --0x04 r- uartStatus                   
+                     when x"01" =>
+                     
+                        dout                 <= x"000000" & "000000" & dataSenderReady & dataReceivedReady;
 
-								ready						<= '1';								
-							
-							when others =>
-							
-								dout	<= ( others => '0' );
-								ready <= '1';
-								
-						end case; -- a( 7 downto 0 ) is
-						
-						uartRegState <= urWaitForBusCycleEnd;
-					
-					end if; -- ce = '1';
-					
-				when urWaitForBusCycleEnd =>
-				
-					--wait for bus cycle to end
-					if ce = '0' then
-					
-						uartRegState <= urWaitForRegAccess;
-						ready	<= '0';
-						
-					end if;
-					
-				when others =>
-				
-					uartRegState <= urWaitForRegAccess;
-					
-			end case; --uartRegState is
+                        ready                <= '1';                       
+                     
+                     when others =>
+                     
+                        dout  <= ( others => '0' );
+                        ready <= '1';
+                        
+                  end case; -- a( 7 downto 0 ) is
+                  
+                  uartRegState <= urWaitForBusCycleEnd;
+               
+               end if; -- ce = '1';
+               
+            when urWaitForBusCycleEnd =>
+            
+               --wait for bus cycle to end
+               if ce = '0' then
+               
+                  uartRegState <= urWaitForRegAccess;
+                  ready <= '0';
+                  
+               end if;
+               
+            when others =>
+            
+               uartRegState <= urWaitForRegAccess;
+               
+         end case; --uartRegState is
 
-		end if; --reset = '1'
+      end if; --reset = '1'
 
-	end if;--rising_edge( clock )
-		
+   end if;--rising_edge( clock )
+      
 end process;
 
 
@@ -217,24 +217,24 @@ rxdSyncInst: inputSync
         signalOutput(0) => uartRXDSync
 
     );
-	 
-	 
+    
+    
 --place rx fifo
-dataReceivedReady	<= not rxFiFoEmpty;
+dataReceivedReady <= not rxFiFoEmpty;
 
 rxFiFoInst:uartFiFo
 port map
-	(
-		clock		=> clock,
-		data		=> rxBuffer,
-		rdreq		=> dataReceivedReadAcknowledge,
-		wrreq		=> rxFiFoWrReq,
-		empty		=> rxFiFoEmpty,
---		full		: OUT STD_LOGIC ;
-		q			=> dataReceived
-	);
-	
-	
+   (
+      clock    => clock,
+      data     => rxBuffer,
+      rdreq    => dataReceivedReadAcknowledge,
+      wrreq    => rxFiFoWrReq,
+      empty    => rxFiFoEmpty,
+--    full     : OUT STD_LOGIC ;
+      q        => dataReceived
+   );
+   
+   
 receiver: process( all )
 
 begin
@@ -245,7 +245,7 @@ begin
 
             rxState             <= rxsWaitForStartBit;
             rxBaudCounter       <= ( others => '0' );
-				rxFiFoWrReq				<= '0';
+            rxFiFoWrReq          <= '0';
 
         else
 
@@ -253,9 +253,9 @@ begin
 
                 when rxsWaitForStartBit =>
 
-						--clear fifo write request
-						rxFiFoWrReq	<= '0';
-								
+                  --clear fifo write request
+                  rxFiFoWrReq <= '0';
+                        
                     if uartRXDSync = '0' then
 
                         rxBaudCounter   <= conv_std_logic_vector( baudCounterRxStartBit, rxBaudCounter'length );
@@ -376,24 +376,24 @@ begin
                     end if;
 
                 when rxsStopBit =>
-							
-						
-							if rxBaudCounter /= 0 then
+                     
+                  
+                     if rxBaudCounter /= 0 then
                     
                         rxBaudCounter <= rxBaudCounter - 1;
-						  
-						  else
+                    
+                    else
                         
-								
+                        
                         --todo: check if stop bit is really '1'
 
 
-								--write data to fifo
-								rxFiFoWrReq	<= '1';
+                        --write data to fifo
+                        rxFiFoWrReq <= '1';
                         
-								rxState             <= rxsWaitForStartBit;
-								
-								
+                        rxState             <= rxsWaitForStartBit;
+                        
+                        
                     end if;
 
 
@@ -403,7 +403,7 @@ begin
 
             end case;
 
-				
+            
         end if;
 
     end if;

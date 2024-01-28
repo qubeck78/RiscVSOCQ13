@@ -23,8 +23,8 @@ generic(
 );
 
 port(
-	--reset
-	 reset:          in  std_logic;
+   --reset
+    reset:          in  std_logic;
     pgClock:        in  std_logic;
     pgVSync:        out std_logic;
     pgHSync:        out std_logic;
@@ -39,18 +39,18 @@ port(
     videoRamBA:     out std_logic_vector( 13 downto 0 );
     videoRamBDout:  in  std_logic_vector( 15 downto 0 );
 
-	 
-	 pgXCount:		  out std_logic_vector( 11 downto 0 );
-	 pgYCount:		  out std_logic_vector( 11 downto 0 );
-	 pgDeX:          out std_logic;
-	 pgDeY:          out std_logic;
-	 pgPreFetchLine: out std_logic;
-	 pgFetchEnable:  out std_logic;
+    
+    pgXCount:       out std_logic_vector( 11 downto 0 );
+    pgYCount:       out std_logic_vector( 11 downto 0 );
+    pgDeX:          out std_logic;
+    pgDeY:          out std_logic;
+    pgPreFetchLine: out std_logic;
+    pgFetchEnable:  out std_logic;
 
-	-- 00 : 40x30 characters, 16 font/background colors
-	-- 01 : 80x30 characters, 16 font/background colors
-	pgVideoMode:		in	 std_logic_vector( 1 downto 0 )
-	 
+   -- 00 : 40x30 characters, 16 font/background colors
+   -- 01 : 80x30 characters, 16 font/background colors
+   pgVideoMode:      in  std_logic_vector( 1 downto 0 )
+    
 );
 
 end pixelGenTxt;
@@ -70,11 +70,11 @@ signal  pgLetterData:       std_logic_vector( 7 downto 0 );
 
 type pgState_T is ( m0pre0, m0pre1, m0pre2, m0pre3, m0pre4, m0pre5, m0pre6, m0p0, m0p1, m0p2, m0p3, m0p4, m0p5, m0p6, m0p7,
                     m0p8, m0p9, m0p10, m0p11, m0p12, m0p13, m0p14, m0p15, m0hblank,
-						 
-						m1pre0, m1pre1, m1pre2, m1pre3, m1pre4, m1pre5, m1pre6, m1p0, m1p1, m1p2, m1p3, m1p4, m1p5, m1p6, m1p7,
-						m1p8, m1p9, m1p10, m1p11, m1p12, m1p13, m1p14, m1p15, m1hblank
-						 
-						);
+                   
+                  m1pre0, m1pre1, m1pre2, m1pre3, m1pre4, m1pre5, m1pre6, m1p0, m1p1, m1p2, m1p3, m1p4, m1p5, m1p6, m1p7,
+                  m1p8, m1p9, m1p10, m1p11, m1p12, m1p13, m1p14, m1p15, m1hblank
+                   
+                  );
 
 signal pgState: pgState_T;
 
@@ -86,125 +86,125 @@ signal pgBackgroundColor:   std_logic_vector( 23 downto 0 );
 
 begin
 
-	colorLUT: process( all )
-	begin
-	
-		if rising_edge( pgClock ) then
-		
-			  case videoRamBDout( 15 downto 12) is
+   colorLUT: process( all )
+   begin
+   
+      if rising_edge( pgClock ) then
+      
+           case videoRamBDout( 15 downto 12) is
 
-					when "0000" =>
-						 pgLutBackgroundColor   <= x"000000";
+               when "0000" =>
+                   pgLutBackgroundColor   <= x"000000";
 
-					when "0001" =>
-						 pgLutBackgroundColor   <= x"000080";
+               when "0001" =>
+                   pgLutBackgroundColor   <= x"000080";
 
-					when "0010" =>
-						 pgLutBackgroundColor   <= x"008000";
+               when "0010" =>
+                   pgLutBackgroundColor   <= x"008000";
 
-					when "0011" =>
-						 pgLutBackgroundColor   <= x"800000";
+               when "0011" =>
+                   pgLutBackgroundColor   <= x"800000";
 
-					when "0100" =>
-						 pgLutBackgroundColor   <= x"008080";
+               when "0100" =>
+                   pgLutBackgroundColor   <= x"008080";
 
-					when "0101" =>
-						 pgLutBackgroundColor   <= x"808000";
+               when "0101" =>
+                   pgLutBackgroundColor   <= x"808000";
 
-					when "0110" =>
-						 pgLutBackgroundColor   <= x"800080";
+               when "0110" =>
+                   pgLutBackgroundColor   <= x"800080";
 
-					when "0111" =>
-						 pgLutBackgroundColor   <= x"202020";
+               when "0111" =>
+                   pgLutBackgroundColor   <= x"202020";
  
-					when "1000" =>
-						 pgLutBackgroundColor   <= x"808080";
+               when "1000" =>
+                   pgLutBackgroundColor   <= x"808080";
 
-					when "1001" =>
-						 pgLutBackgroundColor   <= x"0000ff";
+               when "1001" =>
+                   pgLutBackgroundColor   <= x"0000ff";
 
-					when "1010" =>
-						 pgLutBackgroundColor   <= x"00ff00";
+               when "1010" =>
+                   pgLutBackgroundColor   <= x"00ff00";
 
-					when "1011" =>
-						 pgLutBackgroundColor   <= x"ff0000";
+               when "1011" =>
+                   pgLutBackgroundColor   <= x"ff0000";
 
-					when "1100" =>
-						 pgLutBackgroundColor   <= x"00ffff";
+               when "1100" =>
+                   pgLutBackgroundColor   <= x"00ffff";
 
-					when "1101" =>
-						 pgLutBackgroundColor   <= x"ffff00";
+               when "1101" =>
+                   pgLutBackgroundColor   <= x"ffff00";
 
-					when "1110" =>
-						 pgLutBackgroundColor   <= x"ff00ff";
+               when "1110" =>
+                   pgLutBackgroundColor   <= x"ff00ff";
 
-					when "1111" =>
-						 pgLutBackgroundColor   <= x"ffffff";
+               when "1111" =>
+                   pgLutBackgroundColor   <= x"ffffff";
 
-					when others =>
+               when others =>
 
-						 pgLutBackgroundColor   <= x"000000";
-			  end case;
+                   pgLutBackgroundColor   <= x"000000";
+           end case;
 
-			  case videoRamBDout( 11 downto 8 ) is
+           case videoRamBDout( 11 downto 8 ) is
 
-					when "0000" =>
-						 pgLutLetterColor   <= x"000000";
+               when "0000" =>
+                   pgLutLetterColor   <= x"000000";
 
-					when "0001" =>
-						 pgLutLetterColor   <= x"000080";
+               when "0001" =>
+                   pgLutLetterColor   <= x"000080";
 
-					when "0010" =>
-						 pgLutLetterColor   <= x"008000";
+               when "0010" =>
+                   pgLutLetterColor   <= x"008000";
 
-					when "0011" =>
-						 pgLutLetterColor   <= x"800000";
+               when "0011" =>
+                   pgLutLetterColor   <= x"800000";
 
-					when "0100" =>
-						 pgLutLetterColor   <= x"008080";
+               when "0100" =>
+                   pgLutLetterColor   <= x"008080";
 
-					when "0101" =>
-						 pgLutLetterColor   <= x"808000";
+               when "0101" =>
+                   pgLutLetterColor   <= x"808000";
 
-					when "0110" =>
-						 pgLutLetterColor   <= x"800080";
+               when "0110" =>
+                   pgLutLetterColor   <= x"800080";
 
-					when "0111" =>
-						 pgLutLetterColor   <= x"404040";
+               when "0111" =>
+                   pgLutLetterColor   <= x"404040";
  
-					when "1000" =>
-						 pgLutLetterColor   <= x"808080";
+               when "1000" =>
+                   pgLutLetterColor   <= x"808080";
 
-					when "1001" =>
-						 pgLutLetterColor   <= x"0000ff";
+               when "1001" =>
+                   pgLutLetterColor   <= x"0000ff";
 
-					when "1010" =>
-						 pgLutLetterColor   <= x"00ff00";
+               when "1010" =>
+                   pgLutLetterColor   <= x"00ff00";
 
-					when "1011" =>
-						 pgLutLetterColor   <= x"ff0000";
+               when "1011" =>
+                   pgLutLetterColor   <= x"ff0000";
 
-					when "1100" =>
-						 pgLutLetterColor   <= x"00ffff";
+               when "1100" =>
+                   pgLutLetterColor   <= x"00ffff";
 
-					when "1101" =>
-						 pgLutLetterColor   <= x"ffff00";
+               when "1101" =>
+                   pgLutLetterColor   <= x"ffff00";
 
-					when "1110" =>
-						 pgLutLetterColor   <= x"ff00ff";
+               when "1110" =>
+                   pgLutLetterColor   <= x"ff00ff";
 
-					when "1111" =>
-						 pgLutLetterColor   <= x"ffffff";
+               when "1111" =>
+                   pgLutLetterColor   <= x"ffffff";
 
-					when others =>
+               when others =>
 
-						 pgLutLetterColor   <= x"000000";
-			  end case;
+                   pgLutLetterColor   <= x"000000";
+           end case;
 
-		end if; --rising_edge( pgClock )
-		
-	end process;
-	
+      end if; --rising_edge( pgClock )
+      
+   end process;
+   
 
 
     pixelgen: process( all )
@@ -226,8 +226,8 @@ begin
 
             pgState             <= m0pre0;
 
-				pgDisplayPtr        <= "11011010100000";
-				pgDisplayPtrShadow  <= "11011010100000";
+            pgDisplayPtr        <= "11011010100000";
+            pgDisplayPtrShadow  <= "11011010100000";
             pgLetterYCount      <= ( others => '0' );
 
 
@@ -309,18 +309,18 @@ begin
 
             end if;
 
-				--Pre fetch line, active for 2 pixels, just before end of front v porch. To be used as first dma request
-				
-				if pgYCount = vBackPorch - 2 and pgXCount( 11 downto 2 ) = "00000000000" then
-			
-					pgPreFetchLine <= '1';
-				
-				else
-				
-					pgPreFetchLine <= '0';
-					
-				end if;
-				
+            --Pre fetch line, active for 2 pixels, just before end of front v porch. To be used as first dma request
+            
+            if pgYCount = vBackPorch - 2 and pgXCount( 11 downto 2 ) = "00000000000" then
+         
+               pgPreFetchLine <= '1';
+            
+            else
+            
+               pgPreFetchLine <= '0';
+               
+            end if;
+            
             --fetch enable: 8 pixels before line start, only when deY is active
 
             if pgDeY = '1' and pgXCount >= hBackPorch - 8 and pgXCount < ( hBackPorch + hActive - 8 ) then
@@ -343,9 +343,9 @@ begin
 
             if pgVSync = '1' then
             
-					--0x6D40	
-					pgDisplayPtr        <= "11011010100000";
-					pgDisplayPtrShadow  <= "11011010100000";
+               --0x6D40 
+               pgDisplayPtr        <= "11011010100000";
+               pgDisplayPtrShadow  <= "11011010100000";
                pgLetterYCount      <= ( others => '0' );
 
             end if;
@@ -353,7 +353,7 @@ begin
 
             case pgState is
             
-					--mode 0 -> 40x30 chars
+               --mode 0 -> 40x30 chars
                 --wait for fetch enable
                 --7 prefetch states to match 8 clock cycles between fetch enable and display enable
                 when m0pre0 =>
@@ -373,13 +373,13 @@ begin
 
                     end if;
 
-						--switch mode if necesary
-						if pgVideoMode = "01" then
-						
-							pgState	<= m1pre0;
-							
-						end if;
-						
+                  --switch mode if necesary
+                  if pgVideoMode = "01" then
+                  
+                     pgState  <= m1pre0;
+                     
+                  end if;
+                  
                 when m0pre1 =>
 
                     pgState <= m0pre2;
@@ -393,11 +393,11 @@ begin
                     pgState <= m0pre3;
                     
                 when m0pre3 =>
-							
-							--latch colors
-							pgLetterColor		<= pgLutLetterColor;
-							pgBackgroundColor	<= pgLutBackgroundColor;
-					 
+                     
+                     --latch colors
+                     pgLetterColor     <= pgLutLetterColor;
+                     pgBackgroundColor <= pgLutBackgroundColor;
+                
                     pgState <= m0pre4;
 
                 when m0pre4 =>
@@ -616,9 +616,9 @@ begin
                     --store next character
                     pgLetterData    <= fontRomDout;
 
-							--latch colors
-							pgLetterColor		<= pgLutLetterColor;
-							pgBackgroundColor	<= pgLutBackgroundColor;
+                     --latch colors
+                     pgLetterColor     <= pgLutLetterColor;
+                     pgBackgroundColor <= pgLutBackgroundColor;
 
                     if pgFetchEnable = '1' then
 
@@ -649,9 +649,9 @@ begin
                     pgState <= m0pre0;
 
 
-					--mode 1 -> 80x30 chars
-					--wait for fetch enable
-					--7 prefetch states to match 8 clock cycles between fetch enable and display enable
+               --mode 1 -> 80x30 chars
+               --wait for fetch enable
+               --7 prefetch states to match 8 clock cycles between fetch enable and display enable
                 when m1pre0 =>
                     
                     pgR <= ( others => '0' );
@@ -668,14 +668,14 @@ begin
 
                     end if;
 
-						--switch mode if necesary
-						if pgVideoMode = "00" then
-						
-							pgState	<= m0pre0;
-							
-						end if;
+                  --switch mode if necesary
+                  if pgVideoMode = "00" then
+                  
+                     pgState  <= m0pre0;
+                     
+                  end if;
 
-					when m1pre1 =>
+               when m1pre1 =>
 
                     pgState <= m1pre2;
 
@@ -688,11 +688,11 @@ begin
                     pgState <= m1pre3;
                     
                 when m1pre3 =>
-							
-							--latch colors
-							pgLetterColor		<= pgLutLetterColor;
-							pgBackgroundColor	<= pgLutBackgroundColor;
-					 
+                     
+                     --latch colors
+                     pgLetterColor     <= pgLutLetterColor;
+                     pgBackgroundColor <= pgLutBackgroundColor;
+                
                     pgState <= m1pre4;
 
                 when m1pre4 =>
@@ -746,7 +746,7 @@ begin
                     end if;
                     
                     pgState <= m1p2;
-						  
+                    
                 when m1p2 =>
 
                      if pgLetterData( 5 ) = '1' then
@@ -764,7 +764,7 @@ begin
                     end if;
                    
                     pgState <= m1p3;
-						  
+                    
                 when m1p3 =>
 
                      if pgLetterData( 4 ) = '1' then
@@ -781,10 +781,10 @@ begin
 
                     end if;
 
-						--start fetch
-						videoRamBA          <= pgDisplayPtr;
+                  --start fetch
+                  videoRamBA          <= pgDisplayPtr;
                    
-						pgState <= m1p4;
+                  pgState <= m1p4;
 
                 when m1p4 =>
 
@@ -801,8 +801,8 @@ begin
                         pgB <= pgBackgroundColor( 23 downto 16 );
 
                     end if;
-							
-						  
+                     
+                    
                   pgState <= m1p5;
 
                 when m1p5 =>
@@ -821,12 +821,12 @@ begin
 
                     end if;
                    
-							--read char shape
+                     --read char shape
                     fontRomA            <= videoRamBDout( 7 downto 0 ) & pgLetterYCount( 3 downto 1 );
 
                     pgState <= m1p6;
 
-				  when m1p6 =>
+              when m1p6 =>
 
                      if pgLetterData( 1 ) = '1' then
 
@@ -861,7 +861,7 @@ begin
 
                     end if;
                    
-						if pgFetchEnable = '1' then
+                  if pgFetchEnable = '1' then
 
                         pgDisplayPtr    <= pgDisplayPtr + 1;
 
@@ -870,9 +870,9 @@ begin
                     --store next character
                     pgLetterData    <= fontRomDout;
 
-							--latch colors
-							pgLetterColor		<= pgLutLetterColor;
-							pgBackgroundColor	<= pgLutBackgroundColor;
+                     --latch colors
+                     pgLetterColor     <= pgLutLetterColor;
+                     pgBackgroundColor <= pgLutBackgroundColor;
 
                     if pgFetchEnable = '1' then
 
@@ -883,8 +883,8 @@ begin
                         pgState <= m1hblank;
 
                     end if;
-						  
-					when m1hblank =>
+                    
+               when m1hblank =>
 
                     pgR <= ( others => '0' );
                     pgG <= ( others => '0' );
@@ -901,8 +901,8 @@ begin
                     pgLetterYCount <= pgLetterYCount + 1;
 
                     pgState <= m1pre0;
-						  
-				when others =>
+                    
+            when others =>
 
                     pgState <= m0pre0;
 

@@ -11,25 +11,25 @@ entity usbHost is
 
 port(
 
-	--cpu interface
-	reset:				in  	std_logic;
-	clock:				in  	std_logic;
-	a:						in 	std_logic_vector( 15 downto 0 );
-	din:					in 	std_logic_vector( 31 downto 0 );
-	dout:					out	std_logic_vector( 31 downto 0 );
-	
-	ce:					in		std_logic;
-	wr:					in		std_logic;
-	dataMask:			in		std_logic_vector( 3 downto 0 );
-	
-	ready:				out	std_logic;
-	
-	--usb clock (12MHz)
-	usbHClk:				in 	std_logic;
-	
-	--usb interfaces
-	usbH0Dp:				inout std_logic;		
-	usbH0Dm:				inout std_logic		
+   --cpu interface
+   reset:            in    std_logic;
+   clock:            in    std_logic;
+   a:                in    std_logic_vector( 15 downto 0 );
+   din:              in    std_logic_vector( 31 downto 0 );
+   dout:             out   std_logic_vector( 31 downto 0 );
+   
+   ce:               in    std_logic;
+   wr:               in    std_logic;
+   dataMask:         in    std_logic_vector( 3 downto 0 );
+   
+   ready:            out   std_logic;
+   
+   --usb clock (12MHz)
+   usbHClk:          in    std_logic;
+   
+   --usb interfaces
+   usbH0Dp:          inout std_logic;     
+   usbH0Dm:          inout std_logic      
 
 );
 end usbHost;
@@ -83,24 +83,24 @@ end component;
 
 -- usb hid keyboard data fifo
 component keyboardFifo IS
-	PORT
-	(
-		data			: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
-		rdclk			: IN STD_LOGIC ;
-		rdreq			: IN STD_LOGIC ;
-		wrclk			: IN STD_LOGIC ;
-		wrreq			: IN STD_LOGIC ;
-		q				: OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
-		rdempty		: OUT STD_LOGIC ;
-		wrfull		: OUT STD_LOGIC 
-	);
+   PORT
+   (
+      data        : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+      rdclk       : IN STD_LOGIC ;
+      rdreq       : IN STD_LOGIC ;
+      wrclk       : IN STD_LOGIC ;
+      wrreq       : IN STD_LOGIC ;
+      q           : OUT STD_LOGIC_VECTOR (31 DOWNTO 0);
+      rdempty     : OUT STD_LOGIC ;
+      wrfull      : OUT STD_LOGIC 
+   );
 END component;
 
 --signals
 
 --registers signals
 type usbhRegState_T is ( usbhrWaitForRegAccess, usbhrWaitForBusCycleEnd );
-signal usbhRegState:			usbhRegState_T;
+signal usbhRegState:       usbhRegState_T;
 
 --usb host signals
 
@@ -131,83 +131,83 @@ signal fifoHidKeyboardFull:     std_logic;
 begin
 
 registers: process( all )
-	begin
+   begin
 
-		if rising_edge( clock ) then
-		
-			if reset = '1' then
-			
-				fifoHidKeyboardRdEn	<= '0';
+      if rising_edge( clock ) then
+      
+         if reset = '1' then
+         
+            fifoHidKeyboardRdEn  <= '0';
 
-				ready	<= '0';	
-				usbhRegState	<= usbhrWaitForRegAccess;				
-				
-			else
-			
-			
-				fifoHidKeyboardRdEn	<= '0';
-				
-				case usbhRegState is
-		
-					when usbhrWaitForRegAccess =>
-				
-						if ce = '1' then
-						
-							--cpu wants to access registers
-						
-							ready <= '0';
-							
-							case a( 7 downto 0 ) is
-							
-								--0x00 r- usbHidKeyboardStatus							
-								when x"00" =>
-								
-									dout <= x"0000000" & "00" & fifoHidKeyboardFull & fifoHidKeyboardEmpty;
+            ready <= '0';  
+            usbhRegState   <= usbhrWaitForRegAccess;           
+            
+         else
+         
+         
+            fifoHidKeyboardRdEn  <= '0';
+            
+            case usbhRegState is
+      
+               when usbhrWaitForRegAccess =>
+            
+                  if ce = '1' then
+                  
+                     --cpu wants to access registers
+                  
+                     ready <= '0';
+                     
+                     case a( 7 downto 0 ) is
+                     
+                        --0x00 r- usbHidKeyboardStatus                     
+                        when x"00" =>
+                        
+                           dout <= x"0000000" & "00" & fifoHidKeyboardFull & fifoHidKeyboardEmpty;
 
-									ready	<= '1';
+                           ready <= '1';
 
-								--0x04 r- usbHidKeyboardData							
-								when x"01" =>
-								
-									dout 						<= fifoHidKeyboardDataOut;
-									fifoHidKeyboardRdEn 	<= '1'; 
+                        --0x04 r- usbHidKeyboardData                    
+                        when x"01" =>
+                        
+                           dout                 <= fifoHidKeyboardDataOut;
+                           fifoHidKeyboardRdEn  <= '1'; 
 
-									ready						<= '1';								
-								
-								when others =>
-								
-									dout	<= ( others => '0' );
-									ready <= '1';
-									
-							end case; -- a( 7 downto 0 ) is
-							
-							usbhRegState <= usbhrWaitForBusCycleEnd;
-						
-						end if; -- ce = '1';
-						
-					when usbhrWaitForBusCycleEnd =>
-					
-						--wait for bus cycle to end
-						if ce = '0' then
-						
-							usbhRegState <= usbhrWaitForRegAccess;
-							ready	<= '0';
-							
-						end if;
-						
-					when others =>
-					
-						usbhRegState <= usbhrWaitForRegAccess;
-						
-				end case; --usbhRegState is
+                           ready                <= '1';                       
+                        
+                        when others =>
+                        
+                           dout  <= ( others => '0' );
+                           ready <= '1';
+                           
+                     end case; -- a( 7 downto 0 ) is
+                     
+                     usbhRegState <= usbhrWaitForBusCycleEnd;
+                  
+                  end if; -- ce = '1';
+                  
+               when usbhrWaitForBusCycleEnd =>
+               
+                  --wait for bus cycle to end
+                  if ce = '0' then
+                  
+                     usbhRegState <= usbhrWaitForRegAccess;
+                     ready <= '0';
+                     
+                  end if;
+                  
+               when others =>
+               
+                  usbhRegState <= usbhrWaitForRegAccess;
+                  
+            end case; --usbhRegState is
 
-			end if; --reset = '1'
-	
-		end if;--rising_edge( clock )
-			
-	end process;
-		
-		
+         end if; --reset = '1'
+   
+      end if;--rising_edge( clock )
+         
+   end process;
+      
+      
 --usb keyboard fifo sync process
 fifoHidKeyboardSync: process( all )
 begin
@@ -241,12 +241,12 @@ begin
                     if usbH0ReportPulse = '0' then
                         fifoHidKeyboardSyncState  <= fksIdle;
                     end if;
-					
-					when others =>
-						
-						fifoHidKeyboardSyncState  <= fksIdle;
+               
+               when others =>
+                  
+                  fifoHidKeyboardSyncState  <= fksIdle;
             
-				end case;
+            end case;
 
         end if;
 
@@ -287,18 +287,18 @@ port map(
 keyboardFifoInst:keyboardFifo
 port map(
 
-		wrclk			=> clock,
-		wrreq			=> fifoHidKeyboardWrEn,
-		data			=> fifoHidKeyboardDataIn,
-		
-		
-		rdclk			=> clock,
-		rdreq			=> fifoHidKeyboardRdEn,
-		q				=> fifoHidKeyboardDataOut,
+      wrclk       => clock,
+      wrreq       => fifoHidKeyboardWrEn,
+      data        => fifoHidKeyboardDataIn,
+      
+      
+      rdclk       => clock,
+      rdreq       => fifoHidKeyboardRdEn,
+      q           => fifoHidKeyboardDataOut,
 
-		rdempty		=> fifoHidKeyboardEmpty,
-		wrfull		=> fifoHidKeyboardFull
-		
+      rdempty     => fifoHidKeyboardEmpty,
+      wrfull      => fifoHidKeyboardFull
+      
 );
 
 

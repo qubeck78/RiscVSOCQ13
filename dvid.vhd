@@ -38,16 +38,16 @@ architecture Behavioral of dvid is
       );
    END COMPONENT;
 
-	
-	component ddrOutput IS
-	PORT
-	(
-		datain_h		: IN STD_LOGIC_VECTOR (0 DOWNTO 0);
-		datain_l		: IN STD_LOGIC_VECTOR (0 DOWNTO 0);
-		outclock		: IN STD_LOGIC ;
-		dataout		: OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
-	);
-	END component;
+   
+   component ddrOutput IS
+   PORT
+   (
+      datain_h    : IN STD_LOGIC_VECTOR (0 DOWNTO 0);
+      datain_l    : IN STD_LOGIC_VECTOR (0 DOWNTO 0);
+      outclock    : IN STD_LOGIC ;
+      dataout     : OUT STD_LOGIC_VECTOR (0 DOWNTO 0)
+   );
+   END component;
 
    signal encoded_red, encoded_green, encoded_blue : std_logic_vector(9 downto 0);
    signal latched_red, latched_green, latched_blue : std_logic_vector(9 downto 0) := (others => '0');
@@ -67,41 +67,41 @@ begin
    TDMS_encoder_green: TDMS_encoder PORT MAP(clk => clk_pixel, data => green_p, c => c_green, blank => blank, encoded => encoded_green);
    TDMS_encoder_blue:  TDMS_encoder PORT MAP(clk => clk_pixel, data => blue_p,  c => c_blue,  blank => blank, encoded => encoded_blue);
 
-	ddrOutputClockInst: ddrOutput
-	port map
-	(
-		datain_h(0)		=> shift_clock(0),
-		datain_l(0)		=> shift_clock(1),
-		outclock			=> clk,
-		dataout(0)		=> clock_s
-	);
-	
-	ddrOutputRedInst: ddrOutput
-	port map
-	(
-		datain_h(0)		=> shift_red(0),
-		datain_l(0)		=> shift_red(1),
-		outclock			=> clk,
-		dataout(0)		=> red_s
-	);
-	
-	ddrOutputGreenInst: ddrOutput
-	port map
-	(
-		datain_h(0)		=> shift_green(0),
-		datain_l(0)		=> shift_green(1),
-		outclock			=> clk,
-		dataout(0)		=> green_s
-	);
+   ddrOutputClockInst: ddrOutput
+   port map
+   (
+      datain_h(0)    => shift_clock(0),
+      datain_l(0)    => shift_clock(1),
+      outclock       => clk,
+      dataout(0)     => clock_s
+   );
+   
+   ddrOutputRedInst: ddrOutput
+   port map
+   (
+      datain_h(0)    => shift_red(0),
+      datain_l(0)    => shift_red(1),
+      outclock       => clk,
+      dataout(0)     => red_s
+   );
+   
+   ddrOutputGreenInst: ddrOutput
+   port map
+   (
+      datain_h(0)    => shift_green(0),
+      datain_l(0)    => shift_green(1),
+      outclock       => clk,
+      dataout(0)     => green_s
+   );
 
-	ddrOutputBlueInst: ddrOutput
-	port map
-	(
-		datain_h(0)		=> shift_blue(0),
-		datain_l(0)		=> shift_blue(1),
-		outclock			=> clk,
-		dataout(0)		=> blue_s
-	);
+   ddrOutputBlueInst: ddrOutput
+   port map
+   (
+      datain_h(0)    => shift_blue(0),
+      datain_l(0)    => shift_blue(1),
+      outclock       => clk,
+      dataout(0)     => blue_s
+   );
 
    process(clk_pixel)
    begin

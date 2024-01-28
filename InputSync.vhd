@@ -25,7 +25,7 @@ end inputSync;
 
 architecture behavior of inputSync is
 
-constant signalWidth:	integer := inputWidth - 1;
+constant signalWidth:   integer := inputWidth - 1;
 
 signal stage1Reg:   std_logic_vector( signalWidth downto 0 );
 signal stage2Reg:   std_logic_vector( signalWidth downto 0 );

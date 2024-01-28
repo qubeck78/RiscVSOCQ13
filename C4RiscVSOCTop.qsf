@@ -240,7 +240,6 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ga[11]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ga[12]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ga[13]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ga[14]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to ga[20]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gwen
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gd[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gd[1]
