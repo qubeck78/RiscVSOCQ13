@@ -15,11 +15,11 @@
 
 #include "../gfxLib/ff.h" 
 
-#define _PERFORMANCE_TEST
+//#define _PERFORMANCE_TEST
 #define _DMARAMTEST_ALL
 #define _STOPONERROR
 
-#define _SDRAMTEST
+//#define _SDRAMTEST
 
 extern tgfTextOverlay	con;
 
@@ -402,6 +402,7 @@ int memoryTestL( void *memPtr, ulong memLength )
 		{
 			toPrintF( &con, (char*)"error@ 0x%04x - 0x%04x", i, value );
 			error = 1;
+			break;
 		}
 	}
 	
@@ -434,6 +435,7 @@ int memoryTestL( void *memPtr, ulong memLength )
 		{
 			toPrintF( &con, (char*)"error@ 0x%04x - 0x%04x", i, value );
 			error = 1;
+			break;
 		}
 	}
 	
@@ -465,6 +467,7 @@ int memoryTestL( void *memPtr, ulong memLength )
 		{
 			toPrintF( &con, (char*)"error@ 0x%04x - 0x%04x", i, value );
 			error = 1;
+			break;
 		}
 	}
 	
@@ -501,6 +504,7 @@ int memoryTestL( void *memPtr, ulong memLength )
 		{
 			toPrintF( &con, (char*)"error@ 0x%04x - 0x%04x", i, value );
 			error = 1;
+			break;
 		}
 	}
 	
@@ -537,6 +541,7 @@ int memoryTestL( void *memPtr, ulong memLength )
 		{
 			toPrintF( &con, (char*)"error@ 0x%04x - 0x%04x", i, value );
 			error = 1;
+			break;
 		}
 	}
 	
@@ -639,6 +644,11 @@ int main()
 	int 	rv;
 	
 	bspInit();
+
+	setVideoMode( _VIDEOMODE_320_TEXT40_OVER_GFX );
+	//do{}while( 1 );
+
+
 	setVideoMode( _VIDEOMODE_TEXT40_ONLY );
 			
 	con.textAttributes = 0x0f; 
