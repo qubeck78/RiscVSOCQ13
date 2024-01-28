@@ -52,7 +52,7 @@
 #define WP          (0)         /* Card is write protected (yes:true, no:false, default:false) */
 
 
-//extern BSP_T *bsp;	//registers base address
+//extern BSP_T *bsp;    //registers base address
 
 
 
@@ -99,7 +99,7 @@ BYTE CardType;          /* b0:MMC, b1:SDv1, b2:SDv2, b3:Block addressing */
 DWORD get_fattime()
 {
 
-	return 0;
+    return 0;
 }
 
 
@@ -127,12 +127,12 @@ void xmit_mmc (
     do {
         d = *buff++;    /* Get a byte to be sent */
 
-		do
-		{
-		}while( ! ( spi0->spiStatus & 1 ) );
-		
-		spi0->spiData = d;
-		
+        do
+        {
+        }while( ! ( spi0->spiStatus & 1 ) );
+        
+        spi0->spiData = d;
+        
     } while (--bc);
 }
 
@@ -154,16 +154,16 @@ void rcvr_mmc (
     /* Send 0xFF */
 
     do {
-	
-		do
-		{
-		}while( ! ( spi0->spiStatus & 1 ) );
-		
-		spi0->spiData = 0xff;
-		
-		do
-		{
-		}while( ! ( spi0->spiStatus & 1 ) );
+    
+        do
+        {
+        }while( ! ( spi0->spiStatus & 1 ) );
+        
+        spi0->spiData = 0xff;
+        
+        do
+        {
+        }while( ! ( spi0->spiStatus & 1 ) );
 
         *buff++ = spi0->spiData;            /* Store a received byte */
 
@@ -181,16 +181,16 @@ int wait_ready (void)   /* 1:OK, 0:Timeout */
 {
     BYTE d;
     UINT tmr;
-	volatile ulong j;
-	
+    volatile ulong j;
+    
 
 
     for (tmr = 5000; tmr; tmr--) {  /* Wait for ready in timeout of 500ms */
         rcvr_mmc(&d, 1);
         if (d == 0xFF) return 1;
     
-		for( j = 0; j < 1000; j++ );
-		//dly_us(100);
+        for( j = 0; j < 1000; j++ );
+        //dly_us(100);
     }
 
     return 0;
@@ -208,8 +208,8 @@ void deselect (void)
     BYTE d;
 
     //CS_H();
-	bsp->gpoPort |= 1;
-	
+    bsp->gpoPort |= 1;
+    
     rcvr_mmc(&d, 1);
 }
 
@@ -224,9 +224,9 @@ int select (void)   /* 1:OK, 0:Timeout */
 {
     //CS_L();
     
-	bsp->gpoPort &= ( 1 ^ 0xffff );
-	
-	if (!wait_ready()) {
+    bsp->gpoPort &= ( 1 ^ 0xffff );
+    
+    if (!wait_ready()) {
         deselect();
         return 0;
     }
@@ -247,15 +247,15 @@ int rcvr_datablock (    /* 1:OK, 0:Failed */
 {
     BYTE d[2];
     UINT tmr;
-	volatile ulong j;
-	
+    volatile ulong j;
+    
 
     for (tmr = 1000; tmr; tmr--) {  /* Wait for data packet in timeout of 100ms */
         rcvr_mmc(d, 1);
         if (d[0] != 0xFF) break;
-		
-		for( j = 0; j < 1000; j++ );
-		//dly_us(100);
+        
+        for( j = 0; j < 1000; j++ );
+        //dly_us(100);
     }
     if (d[0] != 0xFE) return 0;     /* If not valid data token, retutn with error */
 
@@ -389,8 +389,8 @@ DSTATUS disk_initialize (
     BYTE n, ty, cmd, buf[4];
     UINT tmr;
     DSTATUS s;
-	volatile ulong j;
-	
+    volatile ulong j;
+    
 
     init_port();                /* Initialize control port */
 
@@ -398,9 +398,9 @@ DSTATUS disk_initialize (
     if (s & STA_NODISK) return s;
 
     //CS_H();
-	
-	bsp->gpoPort |= 1;
-	
+    
+    bsp->gpoPort |= 1;
+    
     for (n = 10; n; n--) rcvr_mmc(buf, 1);  /* 80 dummy clocks */
 
     ty = 0;
@@ -411,8 +411,8 @@ DSTATUS disk_initialize (
                 for (tmr = 1000; tmr; tmr--) {          /* Wait for leaving idle state (ACMD41 with HCS bit) */
                     if (send_cmd(ACMD41, 1UL << 30) == 0) break;
                     
-					for( j = 0; j < 10000; j++ );
-					//dly_us(1000);
+                    for( j = 0; j < 10000; j++ );
+                    //dly_us(1000);
                 }
                 if (tmr && send_cmd(CMD58, 0) == 0) {   /* Check CCS bit in the OCR */
                     rcvr_mmc(buf, 4);
@@ -428,7 +428,7 @@ DSTATUS disk_initialize (
             for (tmr = 1000; tmr; tmr--) {          /* Wait for leaving idle state */
                 if (send_cmd(ACMD41, 0) == 0) break;
                 for( j = 0; j < 10000; j++ );
-				//dly_us(1000);
+                //dly_us(1000);
             }
             if (!tmr || send_cmd(CMD16, 512) != 0)  /* Set R/W block length to 512 */
                 ty = 0;
@@ -572,13 +572,13 @@ DRESULT disk_ioctl (
             }
             break;
 
-		case GET_SECTOR_SIZE:
-			*(WORD *)buff = 	512;
-			return RES_OK;
+        case GET_SECTOR_SIZE:
+            *(WORD *)buff =     512;
+            return RES_OK;
 
 
         case GET_BLOCK_SIZE :   /* Get erase block size in unit of sector (DWORD) */
-            *(DWORD*)buff = 1;		//was 128
+            *(DWORD*)buff = 1;      //was 128
             res = RES_OK;
             break;
 
