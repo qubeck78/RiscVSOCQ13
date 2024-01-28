@@ -89,7 +89,7 @@ END component;
 
 --signals
 
-type dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
+type	dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
 							dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3, dmaCpuWrite4, dmaCpuWrite5,
 							dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4, dmaCpuRead5, dmaCpuRead6, dmaCpuRead7, dmaCpuRead8,
 							dmaCh2Write0, dmaCh2Write1, dmaCh2Write2, dmaCh2Write3, dmaCh2Write4, 
@@ -98,24 +98,18 @@ type dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFe
 							dmaCh2Read32_0, dmaCh2Read32_1, dmaCh2Read32_2, dmaCh2Read32_3, dmaCh2Read32_4					
 					);
 							
-signal dmaState:						dmaState_T;
+signal	dmaState:	dmaState_T;
 
 --ch0 buf ram
-signal ch0BufRamDIn:		std_logic_vector( 31 downto 0 );
-signal ch0BufRamWrA:		std_logic_vector( 8 downto 0 );
-signal ch0BufRamWe:		std_logic;
-
-
-signal ch0TransferCounter:		std_logic_vector( 7 downto 0 );
-
-signal ch0DmaPointer:			std_logic_vector( 20 downto 0 );
-signal ch0DmaBufPointer:		std_logic_vector( 8 downto 0 );
+signal	ch0BufRamDIn:				std_logic_vector( 31 downto 0 );
+signal	ch0BufRamWrA:				std_logic_vector( 8 downto 0 );
+signal	ch0BufRamWe:				std_logic;
+signal	ch0TransferCounter:		std_logic_vector( 7 downto 0 );
+signal	ch0DmaPointer:				std_logic_vector( 20 downto 0 );
+signal	ch0DmaBufPointer:			std_logic_vector( 8 downto 0 );
 
 --ch0 doesn't have handshake, so requests have to be latched
-signal ch0DmaRequestLatched:	std_logic_vector( 1 downto 0 );
-
---ch2 request has to be latched
-signal ch2DmaRequestLatched:	std_logic;
+signal	ch0DmaRequestLatched:	std_logic_vector( 1 downto 0 );
 
 begin
 
@@ -171,7 +165,6 @@ begin
 			ch0TransferCounter	<= ( others => '0' );
 
 			ch0DmaRequestLatched	<= "00";
-			ch2DmaRequestLatched	<= '0';
 			
 			dmaState	<= dmaIdle;
 			
@@ -188,12 +181,6 @@ begin
 			
 				ch0DmaRequestLatched( 1 ) <= '1';
 				
-			end if;
-
-			if ch2DmaRequest = '1' then
-			
-				ch2DmaRequestLatched	<= '1';
-			
 			end if;
 			
 			--reset ch0 dma pointer if requested
@@ -233,7 +220,7 @@ begin
 						dmaState	<= dmaGfxFetch0;
 					
 					--ch2 request 
-					elsif ch2DmaRequestLatched = '1' then
+					elsif ch2DmaRequest = '1' then
 	
 						ch2Ready	<= '0';
 						
@@ -468,7 +455,6 @@ begin
 					end if;
 					
 					ch2Ready					<= '1';
-					ch2DmaRequestLatched	<= '0';
 					
 					gds0_7n		<= '1';
 					gds8_15n		<= '1';
@@ -520,7 +506,6 @@ begin
 					gd				<= ( others => 'Z' );
 				
 					ch2Ready					<= '1';
-					ch2DmaRequestLatched	<= '0';
 					
 					dmaState		<= dmaIdle;			
 
@@ -541,7 +526,6 @@ begin
 					ch2Dout	<= gd;				
 
 					ch2Ready					<= '1';
-					ch2DmaRequestLatched	<= '0';
 				
 					gds0_7n		<= '1';
 					gds8_15n		<= '1';
@@ -592,8 +576,7 @@ begin
 				
 					gd				<= ( others => 'Z' );
 
-					ch2Ready					<= '1';
-					ch2DmaRequestLatched	<= '0';
+					ch2Ready		<= '1';
 					
 					dmaState		<= dmaIdle;				
 			

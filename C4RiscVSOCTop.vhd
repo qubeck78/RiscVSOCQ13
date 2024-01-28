@@ -106,7 +106,7 @@ port(
 	tmdsOutClk:			out std_logic;
    tmdsOutClkN:		out std_logic;
    tmdsOutData:		out std_logic_vector( 2 downto 0 );
-   tmdsOutDataN:	out std_logic_vector( 2 downto 0 ); 
+   tmdsOutDataN:		out std_logic_vector( 2 downto 0 ); 
 
 	--graphics sram
 	gds0_7n:		out 	std_logic;
@@ -164,21 +164,6 @@ component fontProm IS
 		address		: IN STD_LOGIC_VECTOR (10 DOWNTO 0);
 		clock			: IN STD_LOGIC  := '1';
 		q				: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
-	);
-END component;
-
-
--- gfx pixel gen buffer ram
-component gfxBufRam IS
-	PORT
-	(
-		data			: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
-		rdaddress	: IN STD_LOGIC_VECTOR (8 DOWNTO 0);
-		rdclock		: IN STD_LOGIC;
-		wraddress	: IN STD_LOGIC_VECTOR (8 DOWNTO 0);
-		wrclock		: IN STD_LOGIC  := '1';
-		wren			: IN STD_LOGIC  := '0';
-		q				: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
 	);
 END component;
 
@@ -587,19 +572,18 @@ port(
 
 end component;
 
+-- signals
 
---signals
-
---active high async reset
+-- active high async reset
 signal	reset:		std_logic;
 
---main pll
+-- main pll
 signal	pllLocked:	std_logic;
 
---gfx pll
+-- gfx pll
 signal	gfxPllLocked:	std_logic;
 
---global clocks
+-- global clocks
 signal	clk25:		std_logic;
 signal	clk50:		std_logic;
 signal	clk100:		std_logic;
@@ -609,7 +593,7 @@ signal	clk12:		std_logic;	--12 MHz USB clock
 signal	clk125:		std_logic;	--hdmi pixel clock
 signal	clk125ps:	std_logic;	--hdmi pixel clock phase shifted
 
---txt pixel gen signals
+-- txt pixel gen signals
 signal  	pgClock:    		std_logic;
 signal  	pgVSync:    		std_logic;
 signal  	pgHSync:    		std_logic;
@@ -626,188 +610,163 @@ signal  	pgFetchEnable:		std_logic;
 signal	videoRamBDout:   	std_logic_vector( 15 downto 0 );
 signal	videoRamBA:      	std_logic_vector( 13 downto 0 );
 
---gfx pixel gen signals
+-- gfx pixel gen signals
 signal	pggR:        		std_logic_vector( 7 downto 0 );
 signal  	pggG:        		std_logic_vector( 7 downto 0 );
 signal  	pggB:        		std_logic_vector( 7 downto 0 ); 
 signal  	pggDMARequest:		std_logic_vector( 1 downto 0 );
 
 
---font rom signals
-signal fontRomA:        std_logic_vector( 10 downto 0 );
-signal fontRomDout:     std_logic_vector( 7 downto 0 );
-
---gfx pixel gen buf ram signals
-signal gfxBufRamDIn:		std_logic_vector( 31 downto 0 );
-signal gfxBufRamWrA:		std_logic_vector( 8 downto 0 );
-signal gfxBufRamWe:		std_logic;
-
-signal gfxBufRamDOut:	std_logic_vector( 31 downto 0 );
-signal gfxBufRamRdA:		std_logic_vector( 8 downto 0 );
+-- font rom signals
+signal	fontRomA:        std_logic_vector( 10 downto 0 );
+signal	fontRomDout:     std_logic_vector( 7 downto 0 );
 
 
---uart signals
-signal uartClock:				std_logic;
+-- uart signals
+signal	uartClock:				std_logic;
 
-signal uartCE:					std_logic;
-signal uartDoutForCPU:		std_logic_vector( 31 downto 0 );
-signal uartReady:				std_logic;
+signal	uartCE:					std_logic;
+signal	uartDoutForCPU:		std_logic_vector( 31 downto 0 );
+signal	uartReady:				std_logic;
 
-signal uartTxd:				std_logic;
-signal uartRxd:				std_logic;
+signal	uartTxd:					std_logic;
+signal	uartRxd:					std_logic;
 
---system ram signals
-signal fpgaCpuMemoryClock:				std_logic;
-signal systemRamDoutForCPU:			std_logic_vector( 31 downto 0 );
-signal systemRamDoutForPixelGen:		std_logic_vector( 31 downto 0 );
-signal systemRAMCE:						std_logic;
+-- system ram signals
+signal	fpgaCpuMemoryClock:				std_logic;
+signal	systemRamDoutForCPU:				std_logic_vector( 31 downto 0 );
+signal	systemRamDoutForPixelGen:		std_logic_vector( 31 downto 0 );
+signal	systemRAMCE:						std_logic;
 
---fast ram signals
-signal fastRamDoutForCPU:				std_logic_vector( 31 downto 0 );
-signal fastRAMCE:							std_logic;
+-- fast ram signals
+signal	fastRamDoutForCPU:				std_logic_vector( 31 downto 0 );
+signal	fastRAMCE:							std_logic;
 
 
---cpu signals
-signal cpuClock:        std_logic;
-signal cpuResetn:			std_logic;
-signal cpuAOut:         std_logic_vector( 29 downto 0 );
-signal cpuDOut:         std_logic_vector( 31 downto 0 );
+-- cpu signals
+signal	cpuClock:			std_logic;
+signal	cpuResetn:			std_logic;
+signal	cpuAOut:				std_logic_vector( 29 downto 0 );
+signal	cpuDOut:				std_logic_vector( 31 downto 0 );
 
-signal cpuMemValid:		std_logic;
-signal cpuMemInstr:		std_logic; 
-signal cpuMemReady:		std_logic;
-signal cpuAOutFull:		std_logic_vector( 31 downto 0 );
-signal cpuWrStrobe:		std_logic_vector( 3 downto 0 );
-signal cpuDin:				std_logic_vector( 31 downto 0 );
+signal	cpuMemValid:		std_logic;
+signal	cpuMemInstr:		std_logic; 
+signal	cpuMemReady:		std_logic;
+signal	cpuAOutFull:		std_logic_vector( 31 downto 0 );
+signal	cpuWrStrobe:		std_logic_vector( 3 downto 0 );
+signal	cpuDin:				std_logic_vector( 31 downto 0 );
 
-signal cpuWr:				std_logic;
-signal cpuDataMask:		std_logic_vector( 3 downto 0 );
-
-signal cpuDmaClock:		std_logic;
+signal	cpuWr:				std_logic;
+signal	cpuDataMask:		std_logic_vector( 3 downto 0 );
 		
 
---SPI signals
-signal spiClock:				std_logic;
-signal spiCE:					std_logic;
-signal spiDoutForCPU:		std_logic_vector( 31 downto 0 );
-signal spiReady:				std_logic;
+-- SPI signals
+signal	spiClock:			std_logic;
+signal	spiCE:				std_logic;
+signal	spiDoutForCPU:		std_logic_vector( 31 downto 0 );
+signal	spiReady:			std_logic;
 
-signal spiSClk:					std_logic;
-signal spiMOSI:					std_logic;
-signal spiMISO:					std_logic;
+signal	spiSClk:				std_logic;
+signal	spiMOSI:				std_logic;
+signal	spiMISO:				std_logic;
 
---gpo signals
-signal gpoRegister:				std_logic_vector( 7 downto 0 );
+-- gpo signals
+signal	gpoRegister:		std_logic_vector( 7 downto 0 );
 
 
---registers signals
+-- registers signals
 
-signal registersClock:					std_logic;
+signal	registersClock:		std_logic;
 
-type regState_T is ( rsWaitForRegAccess, rsWaitForBusCycleEnd );
-signal registerState:					regState_T;
+type		regState_T is ( rsWaitForRegAccess, rsWaitForBusCycleEnd );
+signal	registerState:			regState_T;
 
-signal registersCE:						std_logic;
-signal registersDoutForCPU:			std_logic_vector( 31 downto 0 );
+signal	registersCE:			std_logic;
+signal	registersDoutForCPU:	std_logic_vector( 31 downto 0 );
 
---video mux signals
-signal vmMode:								std_logic_vector( 15 downto 0 );
+-- video mux signals
+signal	vmMode:	std_logic_vector( 15 downto 0 );
 
---dma process signals
-signal dmaClock:					std_logic;
-signal dmaMemoryCE:				std_logic;
-
-signal cpuDmaReady:				std_logic;
-
-signal dmaReady:					std_logic_vector( 3 downto 0 );
-signal dmaRequest:				std_logic_vector( 3 downto 0 );
-signal dmaRequestReg:			std_logic_vector( 3 downto 0 );
-signal dmaDoutForCPU:			std_logic_vector( 31 downto 0 );
-
-type dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
-							dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3, dmaCpuWrite4, dmaCpuWrite5,
-							dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4, dmaCpuRead5, dmaCpuRead6, dmaCpuRead7, dmaCpuRead8,
-							dmaCh2Write0, dmaCh2Write1, dmaCh2Write2, dmaCh2Write3, dmaCh2Write4, 
-							dmaCh2Read0, dmaCh2Read1, dmaCh2Read2, dmaCh2Read3, dmaCh2Read4,
-							dmaCh2Write32_0, dmaCh2Write32_1, dmaCh2Write32_2, dmaCh2Write32_3, dmaCh2Write32_4,
-							dmaCh2Read32_0, dmaCh2Read32_1, dmaCh2Read32_2, dmaCh2Read32_3, dmaCh2Read32_4					
-					);
+-- dma process signals
+signal	dmaClock:					std_logic;
 							
-signal dmaState:						dmaState_T;
+-- dma ch0 buf ram signals ( for gfx pixel gen )
+signal	gfxBufRamDOut:				std_logic_vector( 31 downto 0 );
+signal	gfxBufRamRdA:				std_logic_vector( 8 downto 0 );
+signal	dmaDisplayPointerStart:	std_logic_vector( 20 downto 0 );
 
-signal dmaTransferCounter:			std_logic_vector( 7 downto 0 );
+-- dma ch2 signals (blitter)
+signal	dmaCh2Request:				std_logic;
+signal	dmaCh2Ready:				std_logic;
+signal	dmaCh2RWn:					std_logic;
+signal	dmaCh2Din:					std_logic_vector( 31 downto 0 );
+signal	dmaCh2Dout:					std_logic_vector( 31 downto 0 );
+signal	dmaCh2A:						std_logic_vector( 21 downto 0 );
+signal	dmaCh2TransferSize:		std_logic;
+signal	dmaCh2TransferMask:		std_logic_vector( 1 downto 0 );
 
-signal dmaDisplayPointer:			std_logic_vector( 20 downto 0 );
-signal dmaDisplayBufferPointer:	std_logic_vector( 8 downto 0 );
---screen address register
-signal dmaDisplayPointerStart:	std_logic_vector( 20 downto 0 );
-
---dma ch2 signals (blitter)
-signal dmaCh2RWn:						std_logic;
-signal dmaCh2Din:						std_logic_vector( 31 downto 0 );
-signal dmaCh2Dout:					std_logic_vector( 31 downto 0 );
-signal dmaCh2A:						std_logic_vector( 21 downto 0 );
-signal dmaCh2TransferSize:			std_logic;
-signal dmaCh2TransferMask:			std_logic_vector( 1 downto 0 );
+--	dma ch3 signals ( cpu )
+signal	dmaMemoryCE:				std_logic;
+signal	cpuDmaReady:				std_logic;
+signal	dmaDoutForCPU:				std_logic_vector( 31 downto 0 );
 
 
---tick timer signals
-signal tickTimerClock:					std_logic;
-signal tickTimerReset:					std_logic;
-signal tickTimerPrescalerCounter:	std_logic_vector( 31 downto 0 );
-signal tickTimerCounter:				std_logic_vector( 31 downto 0 );
+-- tick timer signals
+signal	tickTimerClock:				std_logic;
+signal	tickTimerReset:				std_logic;
+signal	tickTimerPrescalerCounter:	std_logic_vector( 31 downto 0 );
+signal	tickTimerCounter:				std_logic_vector( 31 downto 0 );
 
-constant tickTimerPrescalerValue:	integer:=	50000 - 1;	--1ms tick timer @50MHz
+constant	tickTimerPrescalerValue:	integer:=	50000 - 1;	--1ms tick timer @50MHz
 
---usb host signals
-signal usbHostClock:				std_logic;
-signal usbHostCE:					std_logic;
-signal usbHostReady:				std_logic;
-signal usbHostDoutForCPU:		std_logic_vector( 31 downto 0 );
+-- usb host signals
+signal	usbHostClock:				std_logic;
+signal	usbHostCE:					std_logic;
+signal	usbHostReady:				std_logic;
+signal	usbHostDoutForCPU:		std_logic_vector( 31 downto 0 );
 
---usb phy clock ( 12 MHz )
-signal usbHClk:            	std_logic;
+-- usb phy clock ( 12 MHz )
+signal	usbHClk:            		std_logic;
 
---blitter signals
-signal blitterClock:				std_logic;
-signal blitterCE:					std_logic;
-signal blitterReady:				std_logic;
-signal blitterDoutForCPU:		std_logic_vector( 31 downto 0 );
+-- blitter signals
+signal	blitterClock:				std_logic;
+signal	blitterCE:					std_logic;
+signal	blitterReady:				std_logic;
+signal	blitterDoutForCPU:		std_logic_vector( 31 downto 0 );
 
---frameTimer signals
-signal frameTimerClock:		std_logic;
-signal frameTimerReset:		std_logic;
-signal frameTimerPgPrvVSync:	std_logic;
-signal frameTimerValue:		std_logic_vector( 31 downto 0 );
+-- frameTimer signals
+signal	frameTimerClock:			std_logic;
+signal	frameTimerReset:			std_logic;
+signal	frameTimerPgPrvVSync:	std_logic;
+signal	frameTimerValue:			std_logic_vector( 31 downto 0 );
 
---sdram controller signals
-signal sdramClock:					std_logic;
-signal sdramCtrlClock:				std_logic;
-signal sdramCtrlCE:					std_logic;
-signal sdramCtrlDataOutForCPU:	std_logic_vector( 31 downto 0 );
-signal sdramCtrlSdramReady:		std_logic;
+-- sdram controller signals
+signal	sdramClock:					std_logic;
+signal	sdramCtrlClock:			std_logic;
+signal	sdramCtrlCE:				std_logic;
+signal	sdramCtrlDataOutForCPU:	std_logic_vector( 31 downto 0 );
+signal	sdramCtrlSdramReady:		std_logic;
 
---hdmi controller signals
-signal tmdsClk:	std_logic;
-signal tmdsData:	std_logic_vector( 2 downto 0 );
+-- hdmi controller signals
+signal	tmdsClk:		std_logic;
+signal	tmdsData:	std_logic_vector( 2 downto 0 );
 
-signal dviClock:	std_logic;
-signal dviClockps:	std_logic;
-signal dviRed:   	std_logic_vector( 7 downto 0 );
-signal dviGreen:	std_logic_vector( 7 downto 0 );
-signal dviBlue:	std_logic_vector( 7 downto 0 );
-signal dviHSync:	std_logic;
-signal dviVSync:	std_logic;
-signal dviBlank:	std_logic;
+signal	dviClock:	std_logic;
+signal	dviClockps:	std_logic;
+signal	dviRed:   	std_logic_vector( 7 downto 0 );
+signal	dviGreen:	std_logic_vector( 7 downto 0 );
+signal	dviBlue:		std_logic_vector( 7 downto 0 );
+signal	dviHSync:	std_logic;
+signal	dviVSync:	std_logic;
+signal	dviBlank:	std_logic;
 	
---fpalu signals
-signal fpAluClock:		std_logic;
-signal fpAluCE:			std_logic;
-signal fpAluDoutForCPU:	std_logic_vector( 31 downto 0 );
-signal fpAluReady:		std_logic;
+-- fpalu signals
+signal	fpAluClock:			std_logic;
+signal	fpAluCE:				std_logic;
+signal	fpAluDoutForCPU:	std_logic_vector( 31 downto 0 );
+signal	fpAluReady:			std_logic;
 
 begin
-
 
 -- async reset signals 
 
@@ -834,12 +793,12 @@ gfxPllInst : gfxPll
 	port map
 	(
 		areset	 => not core_board_reset,
-		inclk0	 => core_board_clk_50,
+		inclk0	=> core_board_clk_50,
 		
-		c0	 => clk25,					--25 MHz
-		c1	 => clk125,					--125 MHz
-		c2	 => clk125ps,				--125 MHz 180 degree ps
-		locked	 => gfxPllLocked
+		c0			=> clk25,					--25 MHz
+		c1			=> clk125,					--125 MHz
+		c2			=> clk125ps,				--125 MHz 180 degree ps
+		locked	=> gfxPllLocked
 	
 	);
 
@@ -876,7 +835,6 @@ gfxPllInst : gfxPll
 -- blitter clock
 	blitterClock		<= clk100;
 
-
 -- spi clock
 	spiClock				<= clk50;
 
@@ -907,22 +865,6 @@ fontPromInst: fontProm
 		address	=> fontRomA,
 		q			=> fontRomDout
 	);
-	
-
--- place gfx pixel gen buf ram
-	
---	gfxBufRAMInst: gfxBufRam
---	port map(
---
---		rdclock		=> not pgClock,
---		rdaddress	=> gfxBufRamRdA,
---		q				=> gfxBufRamDOut,
---
---		wrclock		=> dmaClock,
---		wren			=> gfxBufRamWe,
---		wraddress	=> gfxBufRamWrA,
---		data			=> gfxBufRamDIn
---	);
 
 		
 	--place txt pixel gen
@@ -1486,14 +1428,14 @@ port map(
 	
 
 	--blitter interface ( ch2 )
-	ch2DmaRequest		=> dmaRequest( 2 ),
+	ch2DmaRequest		=> dmaCh2Request,
 	ch2A					=> dmaCh2A,
 	ch2Din				=> dmaCh2Din,
 	ch2Dout				=> dmaCh2Dout,
 	ch2RWn				=> dmaCh2RWn,
 	ch2WordSize			=> dmaCh2TransferSize,
 	ch2DataMask			=> dmaCh2TransferMask,
-	ch2Ready				=> dmaReady( 2 ),
+	ch2Ready				=> dmaCh2Ready,
 	
 	
 	--cpu interface ( ch3 )
@@ -1621,10 +1563,10 @@ port map(
 	
 	dmaA					=>	dmaCh2A,
 	dmaRWn				=> dmaCh2RWn,
-	dmaRequest			=> dmaRequest(2),
+	dmaRequest			=> dmaCh2Request,
 	dmaTransferSize	=> dmaCh2TransferSize,
 	dmaTransferMask	=> dmaCh2TransferMask,
-	dmaReady				=> dmaReady( 2 )
+	dmaReady				=> dmaCh2Ready
 
 );
  
@@ -1652,7 +1594,7 @@ end generate;
 
 instHidUSBHostGen: if ( instHidUSBHost = true ) generate
 
-	--place usb host
+	-- place usb host
 	usbHostInst: usbHost
 	port map(
 
@@ -1681,7 +1623,7 @@ instHidUSBHostGen: if ( instHidUSBHost = true ) generate
 end generate;
 
 
---place sdram controller
+-- place sdram controller
 	sd1_clk	<= sdramClock;
 	
 sdramControllerInst:sdramController
