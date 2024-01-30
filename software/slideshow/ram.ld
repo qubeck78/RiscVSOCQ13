@@ -2,13 +2,14 @@ MEMORY
 	{						         
 
 /* dma ram - last 512KB of 8MB */
-/*		 ram 	: ORIGIN = 0x20780000, LENGTH = 0x0007ffff
+		 ram 	: ORIGIN = 0x20780000, LENGTH = 0x0007ffff
 		 eram   : ORIGIN = 0x20800000, LENGTH = 0
-*/
+
 
 /* fast ram - 512 KB */
-		 ram 	: ORIGIN = 0x30000000, LENGTH = 0x0007ffff
+/*		 ram 	: ORIGIN = 0x30000000, LENGTH = 0x0007ffff
 		 eram   : ORIGIN = 0x30080000, LENGTH = 0
+*/
 
 /* sdram - last 512KB of 32MB */
 /*		 ram 	: ORIGIN = 0x41f80000, LENGTH = 0x0007ffff

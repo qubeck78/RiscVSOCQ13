@@ -12,6 +12,7 @@ port(
 
    reset:      in  std_logic;
    clock:      in  std_logic;
+   
 
 
    --gfx display mode interface ( ch0 )
@@ -90,8 +91,8 @@ END component;
 --signals
 
 type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
-                     dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3, dmaCpuWrite4, dmaCpuWrite5,
-                     dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4, dmaCpuRead5, dmaCpuRead6, dmaCpuRead7, dmaCpuRead8,
+                     dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3, dmaCpuWrite4, 
+                     dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4,
                      dmaCh2Write0, dmaCh2Write1, dmaCh2Write2, dmaCh2Write3, dmaCh2Write4, 
                      dmaCh2Read0, dmaCh2Read1, dmaCh2Read2, dmaCh2Read3, dmaCh2Read4,
                      dmaCh2Write32_0, dmaCh2Write32_1, dmaCh2Write32_2, dmaCh2Write32_3, dmaCh2Write32_4,
@@ -206,6 +207,14 @@ begin
                   ga <= ch0DmaPointer( 20 downto 0 );
                   gd <= ( others => 'Z' );
    
+                  gds0_7n                 <= '0';
+                  gds8_15n                <= '0';
+                  gds16_23n               <= '0';
+                  gds24_31n               <= '0';
+            
+                  gwen                    <= '1';
+                  goen                    <= '0';
+
                   dmaState <= dmaGfxFetch0;
                   
                --ch0 request 0 ( buffer, upper part )
@@ -217,6 +226,14 @@ begin
                   ga <= ch0DmaPointer( 20 downto 0 );
                   gd <= ( others => 'Z' );
    
+                  gds0_7n                 <= '0';
+                  gds8_15n                <= '0';
+                  gds16_23n               <= '0';
+                  gds24_31n               <= '0';
+            
+                  gwen                    <= '1';
+                  goen                    <= '0';
+
                   dmaState <= dmaGfxFetch0;
                
                --ch2 request 
@@ -326,8 +343,8 @@ begin
                      gds16_23n   <= not dataMask( 2 );
                      gds24_31n   <= not dataMask( 3 );
                         
-                     gwen           <= '1';
-                     goen           <= '1';
+                     gwen        <= '1';
+                     goen        <= '1';
                   
                      
                      dmaState    <= dmaCpuWrite0;
@@ -336,18 +353,18 @@ begin
                   
                      --read
                      
-                     ga             <= a( 20 downto 0 );
-                     gd             <= ( others => 'Z' );
-                     gwen           <= '1';
-                     goen           <= '0';
+                     ga          <= a( 20 downto 0 );
+                     gd          <= ( others => 'Z' );
+                     gwen        <= '1';
+                     goen        <= '1';
                                              
                      gds0_7n     <= '0';
                      gds8_15n    <= '0';  
-                     gds16_23n   <= '1';
-                     gds24_31n   <= '1';
+                     gds16_23n   <= '0';
+                     gds24_31n   <= '0';
                            
                                                                            
-                     dmaState    <= dmaCpuRead1;
+                     dmaState    <= dmaCpuRead0;
                
                   end if;  
                
@@ -362,24 +379,7 @@ begin
                ch0TransferCounter      <= ch0TransferCounter - 1;
             
                ga                      <= ch0DmaPointer( 20 downto 0 );
-            
-               ch0DmaPointer           <= ch0DmaPointer  + 1;
-            
-               gd                      <= ( others => 'Z' );
-            
-               gds0_7n                 <= '0';
-               gds8_15n                <= '0';
-               gds16_23n               <= '0';
-               gds24_31n               <= '0';
-            
-               gwen                    <= '1';
-               goen                    <= '0';
-         
-               ch0BufRamWe             <= '0';
-               ch0BufRamWrA            <= ch0DmaBufPointer;
-            
-               ch0DmaBufPointer        <= ch0DmaBufPointer + 1;
-            
+                                    
                dmaState                <= dmaGfxFetch1;
             
             when dmaGfxFetch1 =>
@@ -388,10 +388,22 @@ begin
                   
             when dmaGfxFetch2 =>
          
+               ch0BufRamWrA            <= ch0DmaBufPointer;
+
+               ch0DmaBufPointer        <= ch0DmaBufPointer + 1;
+               ch0DmaPointer           <= ch0DmaPointer  + 1;
+
                dmaState <= dmaGfxFetch3;
             
             when dmaGfxFetch3 =>
          
+--               ch0BufRamWrA            <= ch0DmaBufPointer;
+--
+--               ch0DmaBufPointer        <= ch0DmaBufPointer + 1;
+--               ch0DmaPointer           <= ch0DmaPointer  + 1;
+
+               --
+               
                ch0BufRamDIn   <= gd;
                         
                ch0BufRamWe    <= '1';
@@ -583,10 +595,12 @@ begin
             --ch3
             when dmaCpuRead0 =>
          
-               dmaState    <= dmaCpuRead1; 
+               dmaState <= dmaCpuRead1; 
          
             when dmaCpuRead1 =>
          
+               goen     <= '0';
+
                dmaState <= dmaCpuRead2;
 
             when dmaCpuRead2 =>
@@ -595,43 +609,19 @@ begin
 
             when dmaCpuRead3 =>
          
-               dout( 15 downto 0 )  <= gd( 15 downto 0 );
-
-               gds0_7n     <= '1';
-               gds8_15n    <= '1';
-               gds16_23n   <= '0';
-               gds24_31n   <= '0';
+               dout     <= gd;
+               ready    <= '1';
 
                dmaState <= dmaCpuRead4;
             
             when dmaCpuRead4 =>
          
-               dmaState <= dmaCpuRead5;
-               
-            when dmaCpuRead5 =>
-         
-               dmaState <= dmaCpuRead6;
-            
-            when dmaCpuRead6 =>
-         
-               dmaState <= dmaCpuRead7;
-            
-            when dmaCpuRead7 =>
-         
-               dout( 31 downto 16 ) <= gd( 31 downto 16 );
-
-               ready <= '1';
-            
                gds0_7n     <= '1';
                gds8_15n    <= '1';
                gds16_23n   <= '1';
                gds24_31n   <= '1';
                gwen        <= '1';
                goen        <= '1';
-
-               dmaState <= dmaCpuRead8;
-            
-            when dmaCpuRead8 =>
          
                if ce = '0' then
             
@@ -680,16 +670,14 @@ begin
                gd          <= ( others => 'Z' );
             
                ready       <= '1';
-               dmaState    <= dmaCpuWrite5;
-            
-            when dmaCpuWrite5 =>
-         
+
                if ce = '0' then
             
                   ready    <= '0';
                   dmaState <= dmaIdle;
             
                end if;
+                     
          
             when others =>
             
