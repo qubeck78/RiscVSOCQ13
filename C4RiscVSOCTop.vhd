@@ -1305,8 +1305,8 @@ begin
                   case cpuAOut( 7 downto 0 ) is
                
                
-                     --rw 0xf0000008 - videoMuxMode
-                     when x"02" =>
+                     --rw 0xf0000000 - videoMuxMode
+                     when x"00" =>
                
                         registersDoutForCPU  <= x"0000" & vmMode;
                         
@@ -1316,13 +1316,13 @@ begin
                         
                         end if;
                
-                     --rw 0xf000000c - videoVSync
-                     when x"03" =>
+                     --rw 0xf0000004 - videoVSync
+                     when x"01" =>
                
                         registersDoutForCPU  <= x"0000" & x"000" & "000" & pgVSync;
 
-                     --rw 0xf0000010 - dmaDisplayPointerStart
-                     when x"04" =>
+                     --rw 0xf0000008 - dmaDisplayPointerStart
+                     when x"02" =>
                
                         registersDoutForCPU  <= "00000000000" & dmaDisplayPointerStart;
                         
@@ -1332,8 +1332,8 @@ begin
                         
                         end if;
                                        
-                     --rw 0xf000001c - gpoPort
-                     when x"07" =>
+                     --rw 0xf000000c - gpoPort
+                     when x"03" =>
                
                         registersDoutForCPU  <= x"0000" & x"00" & gpoRegister;
                         
@@ -1343,8 +1343,8 @@ begin
                         
                         end if;
                         
-                     ---w 0xf0000020 - tickTimerConfig
-                     when x"08" =>
+                     ---w 0xf0000010 - tickTimerConfig
+                     when x"04" =>
                                  
                         if cpuWr = '1' then
                         
@@ -1352,15 +1352,15 @@ begin
                         
                         end if;  
                         
-                     --r- 0xf0000024 - tickTimerValue
-                     when x"09" =>
+                     --r- 0xf0000014 - tickTimerValue
+                     when x"05" =>
                               
                         registersDoutForCPU  <= tickTimerCounter;
                            
                               
                               
-                     --rw 0xf0000028 - frameTimer (write resets timer)
-                     when x"0a" =>
+                     --rw 0xf0000018 - frameTimer (write resets timer)
+                     when x"06" =>
                      
                         registersDoutForCPU  <= frameTimerValue;
                      

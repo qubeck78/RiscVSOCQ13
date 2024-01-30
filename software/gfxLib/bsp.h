@@ -16,12 +16,6 @@
 
 typedef struct _BSP_T
 {
-    //wr - send data via uart, rd - read received data
-    volatile unsigned long _unused0;
-
-    //b0 - suDataReceivedReady, b1 - suDataSenderReady
-    volatile unsigned long _unused1;
-    
     //
     volatile unsigned long videoMuxMode;
     
@@ -30,13 +24,7 @@ typedef struct _BSP_T
     
     //pointer of gfx data to display (within DMA address space, address divided by 4)
     volatile unsigned long  dmaDisplayPointerStart;
-    
-    //wr - send data via spi, rd - read received data
-    volatile unsigned long _unused2;
-    
-    //rd b0 - spiReady
-    volatile unsigned long _unused3;
-    
+        
     //wr b7, b6, b5, b4 - LEDS, b0 - spi0SSel
     volatile unsigned long gpoPort;
     
