@@ -15,70 +15,68 @@
 #include "../gfxLib/diskio.h"
 #include "../gfxLib/ff.h" 
 
-//#define _MODE640
+extern BSP_T        *bsp;
 
-extern BSP_T 		*bsp;
-
-FRESULT 			 rc;             /* Result code */
-extern FATFS 		 fatfs;            /* File system object */
-//FIL 				 fil;                /* File object */
-//DIR 				 dir;                /* Directory object */
-//FILINFO 			 fno;            /* File information object */ 
+FRESULT              rc;             /* Result code */
+extern FATFS         fatfs;            /* File system object */
+//FIL                fil;                /* File object */
+//DIR                dir;                /* Directory object */
+//FILINFO            fno;            /* File information object */ 
 
 
-extern tgfTextOverlay		 con;
-tgfBitmap 			 screen1;
-tgfBitmap 			 screen2;
+extern tgfTextOverlay        con;
+tgfBitmap            screen1;
+tgfBitmap            screen2;
 tgfBitmap            textureMap;
 uchar               *heightMap;
 
-tosFile	in;
+tosFile in;
 
 
 struct {
         float x;       // x position on the map
         float y;       // y position on the map
         short height;  // height of the camera
-		float angle;   // direction of the camera
+        float angle;   // direction of the camera
         short horizon; // horizon position (look up and down)
         float distance; // distance of map
-	} camera = { 256, 256, 40, 0.1, 50, 180 };
+    } camera = { 256, 256, 40, 0.1, 50, 180 };
 
 char buf[128];
 
 int animLeds( int j )
-{	
-		switch( j % 4 )
-		{
-			case 0:
-				bsp->gpoPort |= 0x00f0;
-				bsp->gpoPort ^= 0x0010;
-			
-				break;
+{   
+        switch( j % 4 )
+        {
+            case 0:
+                bsp->gpoPort |= 0x00f0;
+                bsp->gpoPort ^= 0x0010;
+            
+                break;
 
-			case 1:
+            case 1:
 
-				bsp->gpoPort |= 0x00f0;
-				bsp->gpoPort ^= 0x0020;
-			
-				break;
+                bsp->gpoPort |= 0x00f0;
+                bsp->gpoPort ^= 0x0020;
+            
+                break;
 
-			case 2:
-			
-				bsp->gpoPort |= 0x00f0;
-				bsp->gpoPort ^= 0x0040;
+            case 2:
+            
+                bsp->gpoPort |= 0x00f0;
+                bsp->gpoPort ^= 0x0040;
 
-				break;
+                break;
 
-			case 3:
-		
-				bsp->gpoPort |= 0x00f0;
-				bsp->gpoPort ^= 0x0080;
+            case 3:
+        
+                bsp->gpoPort |= 0x00f0;
+                bsp->gpoPort ^= 0x0080;
 
-				break;
-		}
-		
-	return 0;
+                break;
+        }
+        
+    return 0;
 } 
 
 
@@ -86,288 +84,289 @@ int animLeds( int j )
 int commanche( tgfBitmap *screen )
 {
 
-	int 	screenwidth = 160;
-	float	screenwidthf = screenwidth;
-	
-	int 	screenheight = 120;
+    int     screenwidth = 160;
+    float   screenwidthf = screenwidth;
+    
+    int     screenheight = 120;
 
-	int 	mapwidthperiod = 512 - 1;
-	int 	mapheightperiod = 512 - 1;
-	int 	mapshift = 9;
-	long 	mapoffset;
-	float 	deltaz = 1.5f;
-	short   y;
-	short   x;
-	float   z;
-	float 	invz;
-	short	heightonscreen;
-	ushort  color;
-	long 	cameraoffs;
-	float 	sinang;
-	float 	cosang;
-	float 	plx;
-	float 	ply;
-	float 	prx;
-	float 	pry;
-	float 	dx;
-	float 	dy;
-	
-	short	 bw;
-	short	 bh;
+    int     mapwidthperiod = 512 - 1;
+    int     mapheightperiod = 512 - 1;
+    int     mapshift = 9;
+    long    mapoffset;
+    float   deltaz = 1.5f;
+    short   y;
+    short   x;
+    float   z;
+    float   invz;
+    short   heightonscreen;
+    ushort  color;
+    long    cameraoffs;
+    float   sinang;
+    float   cosang;
+    float   plx;
+    float   ply;
+    float   prx;
+    float   pry;
+    float   dx;
+    float   dy;
+    
+    short    bw;
+    short    bh;
 
-	long	linvz;
-	short 	hiddeny[ 320 ];
+    long    linvz;
+    short   hiddeny[ 320 ];
 
-	long	lplx;
-	long 	lply;
-	long	ldx;
-	long	ldy;
-	float	cosangz;
-	float	sinangz;
-	
-	gfFillRect( screen, 80, 60, 80 + screenwidth, 60 + screenheight, 0 );
-	sinang 		= (float)sin( camera.angle );
-	cosang 		= (float)cos( camera.angle );
-	cameraoffs 	= ( ( ((int)camera.y) & mapwidthperiod ) << mapshift ) + ( ((int)camera.x) & mapheightperiod );
-	// Collision detection. Don't fly below the surface.
-	if( ( heightMap[ cameraoffs ] + 10.0f ) > camera.height )
-	{
-		camera.height = heightMap[ cameraoffs ] + 10.0f;
-	}
+    long    lplx;
+    long    lply;
+    long    ldx;
+    long    ldy;
+    float   cosangz;
+    float   sinangz;
+    
+//    gfFillRect( screen, 80, 60, 80 + screenwidth, 60 + screenheight, 0 );
+//    gfFillRect( screen, 0, 60, 319, 60 + screenheight, 0 );
 
-	for( x = 0; x < screenwidth; x++ )
-	{
-		hiddeny[ x ] = screenheight;
-	}
-	// Draw from front to back
-	for( z = 1.0f; z < camera.distance; z += deltaz )
-	{
-		// 90 degree field of view
-		
-		//cosangz = cosang * z;
-		cosangz = ffMul( cosang, z );
+    //clear screen
+    do{}while( ! ( blt->bltStatus & 1 ) );
 
-		//sinangz	= sinang * z;
-		sinangz = ffMul( sinang, z );
-
-		
-		//plx =  ( -cosangz ) - sinangz;
-		plx = ffSub( ffMul( cosangz, -1.0f ), sinangz );
-
-		//ply =   sinangz - cosangz;
-		ply = ffSub( sinangz, cosangz );
-
-		//prx =   cosangz - sinangz;
-		prx = ffSub( cosangz, sinangz );
-
-		//pry =  ( -sinangz ) - cosangz;
-		pry = ffSub( ffMul( sinangz, -1.0f ), cosangz );
+    blt->bltConfig0         = 0x2000;   //32 bit fill value
+    blt->bltDstAddress      = ( ulong )(( ( ulong )screen->buffer + ( 320 * 60 ) - _SYSTEM_MEMORY_BASE ) / 4);
+    blt->bltTransferHeight  = 120;
+    blt->bltTransferWidth   = 160;
+    blt->bltSrcModulo       = 0;
+    blt->bltDstModulo       = 0;
+    blt->bltValue           = 0x00000000;   
+    
+    blt->bltStatus          = 0x1;
 
 
-/*		plx =  -cosang * z - sinang * z;
-		ply =   sinang * z - cosang * z;
-		prx =   cosang * z - sinang * z;
-		pry =  -sinang * z - cosang * z;
-*/		
-		
-		//dx = ( prx - plx ) / screenwidth;
+    
+    sinang      = (float)sin( camera.angle );
+    cosang      = (float)cos( camera.angle );
+    cameraoffs  = ( ( ((int)camera.y) & mapwidthperiod ) << mapshift ) + ( ((int)camera.x) & mapheightperiod );
+    // Collision detection. Don't fly below the surface.
+    if( ( heightMap[ cameraoffs ] + 10.0f ) > camera.height )
+    {
+        camera.height = heightMap[ cameraoffs ] + 10.0f;
+    }
 
-		dx = ffDiv( ffSub( prx, plx ), (float)screenwidth );
+    for( x = 0; x < screenwidth; x++ )
+    {
+        hiddeny[ x ] = screenheight;
+    }
+    // Draw from front to back
+    for( z = 1.0f; z < camera.distance; z += deltaz )
+    {
+        // 90 degree field of view
+        
+        //cosangz = cosang * z;
+        cosangz = ffMul( cosang, z );
 
-		//dy = ( pry - ply ) / screenwidth;
-		dy = ffDiv( ffSub( pry, ply ), (float)screenheight );
+        //sinangz   = sinang * z;
+        sinangz = ffMul( sinang, z );
 
-		
-		//plx += camera.x;
-		plx = ffAdd( plx, camera.x );
+        
+        //plx =  ( -cosangz ) - sinangz;
+        plx = ffSub( ffMul( cosangz, -1.0f ), sinangz );
 
-		//ply += camera.y;
-		ply = ffAdd( ply, camera.y );
+        //ply =   sinangz - cosangz;
+        ply = ffSub( sinangz, cosangz );
 
-//		invz = 1.0f / z * 100.0f;
-//		invz = 100.0f / z;
-		
-//		linvz = invz * 256;
-//		linvz = 25600 / (long)z;
-		linvz = 12800 / (long)z;
-	
-	
-		
-		lplx	= (long)ffMul( plx, 256.0f );
-		lply	= (long)ffMul( ply, 256.0f );
-		ldx	= (long)ffMul( dx, 256.0f );
-		ldy	= (long)ffMul( dy, 256.0f );
+        //prx =   cosangz - sinangz;
+        prx = ffSub( cosangz, sinangz );
 
-		/*lplx 	= plx * 256;
-		lply 	= ply * 256;
-		ldx		= dx * 256;
-		ldy		= dy * 256;
-		*/
-		
-		for( x = 0; x < screenwidth; x++ )
-		{
-//			mapoffset = ( ( ((long)ply) & mapwidthperiod ) << mapshift ) + ( ((long)plx) & mapheightperiod );
-			mapoffset = ( ( ( lply >> 8 ) & mapwidthperiod ) << mapshift ) + ( ( lplx >> 8 ) & mapheightperiod );
-			
-			heightonscreen = (short)( ( ( ( camera.height - heightMap[ mapoffset ] ) * linvz ) >> 8 ) + camera.horizon );
-			
-			if( heightonscreen < 0 )
-			{
-				heightonscreen = 0;
-			}
-			color = ((ushort *)textureMap.buffer)[ mapoffset ];
-			
-			/*for( y = heightonscreen; y < hiddeny[ x ]; y++ )
-			{
-				gfPlotF( screen, x, y, color );
-			}*/
-			if( heightonscreen < hiddeny[x] )
-			{
-				//gfFillRect( screen, x, heightonscreen, x, hiddeny[ x ] - 1, color );
-				
-	
-				do{}while( ! ( blt->bltStatus & 1 ) ); 
-				
-				bh = hiddeny[ x ] - heightonscreen;
-	
-				blt->bltConfig0			= 0x0000;	//fill with value
-			
-				blt->bltDstAddress 		= ( ulong )(( ( ulong ) &(( ushort* )screen->buffer)[ ( ( heightonscreen + 60 ) * 320 ) + x + 80 ] - _SYSTEM_MEMORY_BASE ) / 2);
-				blt->bltDstModulo		= 319;
+        //pry =  ( -sinangz ) - cosangz;
+        pry = ffSub( ffMul( sinangz, -1.0f ), cosangz );
 
-				blt->bltTransferWidth	= 1;
-				blt->bltTransferHeight	= bh - 1;
-			
-				blt->bltValue			= color;
-	
-				blt->bltStatus			= 0x1;	
-				
-			}
-			
-			if( heightonscreen < hiddeny[ x ] )
-			{
-				hiddeny[ x ] = heightonscreen;
-			}
 
-			//plx += dx;
-			//ply += dy;
-			
-			lplx += ldx;
-			lply += ldy;
-			
-		}
+/*      plx =  -cosang * z - sinang * z;
+        ply =   sinang * z - cosang * z;
+        prx =   cosang * z - sinang * z;
+        pry =  -sinang * z - cosang * z;
+*/      
+        
+        //dx = ( prx - plx ) / screenwidth;
 
-		
-		//deltaz += 0.005f;
-		deltaz = ffAdd( deltaz, 0.005f );
+        dx = ffDiv( ffSub( prx, plx ), (float)screenwidth );
 
-	}
+        //dy = ( pry - ply ) / screenwidth;
+        dy = ffDiv( ffSub( pry, ply ), (float)screenheight );
 
-	return 0;
+        
+        //plx += camera.x;
+        plx = ffAdd( plx, camera.x );
+
+        //ply += camera.y;
+        ply = ffAdd( ply, camera.y );
+
+//      invz = 1.0f / z * 100.0f;
+//      invz = 100.0f / z;
+        
+//      linvz = invz * 256;
+//      linvz = 25600 / (long)z;
+        linvz = 12800 / (long)z;
+    
+    
+        
+        lplx    = (long)ffMul( plx, 256.0f );
+        lply    = (long)ffMul( ply, 256.0f );
+        ldx = (long)ffMul( dx, 256.0f );
+        ldy = (long)ffMul( dy, 256.0f );
+
+        /*lplx  = plx * 256;
+        lply    = ply * 256;
+        ldx     = dx * 256;
+        ldy     = dy * 256;
+        */
+        
+        for( x = 0; x < screenwidth; x++ )
+        {
+//          mapoffset = ( ( ((long)ply) & mapwidthperiod ) << mapshift ) + ( ((long)plx) & mapheightperiod );
+            mapoffset = ( ( ( lply >> 8 ) & mapwidthperiod ) << mapshift ) + ( ( lplx >> 8 ) & mapheightperiod );
+            
+            heightonscreen = (short)( ( ( ( camera.height - heightMap[ mapoffset ] ) * linvz ) >> 8 ) + camera.horizon );
+            
+            if( heightonscreen < 0 )
+            {
+                heightonscreen = 0;
+            }
+            color = ((ushort *)textureMap.buffer)[ mapoffset ];
+            
+            /*for( y = heightonscreen; y < hiddeny[ x ]; y++ )
+            {
+                gfPlotF( screen, x, y, color );
+            }*/
+            if( heightonscreen < hiddeny[x] )
+            {
+                //gfFillRect( screen, x, heightonscreen, x, hiddeny[ x ] - 1, color );
+                
+    
+                do{}while( ! ( blt->bltStatus & 1 ) ); 
+                
+                bh = hiddeny[ x ] - heightonscreen;
+    
+                blt->bltConfig0         = 0x0000;   //fill with value
+            
+                blt->bltDstAddress      = ( ulong )(( ( ulong ) &(( ushort* )screen->buffer)[ ( ( heightonscreen + 60 ) * 320 ) + ( x << 1 ) ] - _SYSTEM_MEMORY_BASE ) / 2);
+                blt->bltDstModulo       = 318;
+
+                blt->bltTransferWidth   = 2;
+                blt->bltTransferHeight  = bh - 1;
+            
+                blt->bltValue           = color;
+    
+                blt->bltStatus          = 0x1;  
+                
+            }
+            
+            if( heightonscreen < hiddeny[ x ] )
+            {
+                hiddeny[ x ] = heightonscreen;
+            }
+
+            //plx += dx;
+            //ply += dy;
+            
+            lplx += ldx;
+            lply += ldy;
+            
+        }
+
+        
+        //deltaz += 0.005f;
+        deltaz = ffAdd( deltaz, 0.0025f );
+
+    }
+
+    return 0;
 }
 
 int main()
 {
-	int i;
-	int rv;
-	
-	volatile int j;
-		
-	bspInit();
-		
-		
-	toPrint( &con, (char*)"RiscV Commanche B20240101\n" );
+    int i;
+    int rv;
+    
+    volatile int j;
+        
+    bspInit();
+        
+    setVideoMode( _VIDEOMODE_320_TEXT80_OVER_GFX );
 
-	#ifdef _MODE640
-	
-	setVideoMode( _VIDEOMODE_640_TEXT40_OVER_GFX );
+    toPrint( &con, (char*)"RiscV Commanche B20240130\n" );
 
-	//alloc screen buffers
-	screen1.width 			= 640;	
-	screen1.rowWidth		= 640;	
-	screen1.height   		= 480;	
-	screen2.width 			= 640;	
-	screen2.rowWidth		= 640;	
-	screen2.height   		= 480;	
-	
-	#else
-	
-	setVideoMode( _VIDEOMODE_320_TEXT40_OVER_GFX );
+    //alloc screen buffers
+    screen1.width           = 320;
+    screen1.rowWidth        = 320;
+    screen1.height          = 240;
+    screen2.width           = 320;
+    screen2.rowWidth        = 320;
+    screen2.height          = 240;
+    
+    
+    screen1.flags           = 0;
+    screen1.transparentColor = 0;
+    screen1.buffer           = osAlloc( screen1.width * screen1.height * 2, OS_ALLOC_MEMF_CHIP );   //osAlloc( 320 * 240 * 2 );
+    
+    if( screen1.buffer == NULL )
+    {
+        toPrint( &con, (char*)"\nCan't alloc screen 1\n" );
+        do{}while( 1 );
+    } 
+        
+    screen2.flags           = 0;
+    screen2.transparentColor = 0;
+    screen2.buffer           = osAlloc( screen2.width * screen2.height * 2, OS_ALLOC_MEMF_CHIP );   //osAlloc( 320 * 240 * 2 );
+    
+    if( screen2.buffer == NULL )
+    {
+        toPrint( &con, (char*)"\nCan't alloc screen 2\n" );
+        do{}while( 1 );
+    } 
+    
+    //display first buffer
+    gfDisplayBitmap( &screen1 );
 
-	//alloc screen buffers
-	screen1.width 			= 320;
-	screen1.rowWidth		= 320;
-	screen1.height   		= 240;
-	screen2.width 			= 320;
-	screen2.rowWidth 		= 320;
-	screen2.height   		= 240;
-	
-	#endif
-	
-	screen1.flags    		= 0;
-	screen1.transparentColor = 0;
-	screen1.buffer           = osAlloc( screen1.width * screen1.height * 2, OS_ALLOC_MEMF_CHIP );	//osAlloc( 320 * 240 * 2 );
-	
-	if( screen1.buffer == NULL )
-	{
-		toPrint( &con, (char*)"\nCan't alloc screen 1\n" );
-		do{}while( 1 );
-	} 
-		
-	screen2.flags    		= 0;
-	screen2.transparentColor = 0;
-	screen2.buffer           = osAlloc( screen2.width * screen2.height * 2, OS_ALLOC_MEMF_CHIP );	//osAlloc( 320 * 240 * 2 );
-	
-	if( screen2.buffer == NULL )
-	{
-		toPrint( &con, (char*)"\nCan't alloc screen 2\n" );
-		do{}while( 1 );
-	} 
-	
-	//display first buffer
-	gfDisplayBitmap( &screen1 );
-
-	gfFillRect( &screen1, 0, 0, screen1.width - 1, screen1.height - 1 , gfColor( 0, 0, 0 ) ); 
-	gfFillRect( &screen2, 0, 0, screen1.width - 1, screen1.height - 1 , gfColor( 0, 0, 0 ) ); 
-	
-	//init filesystem
-	rv = osFInit();
+    gfFillRect( &screen1, 0, 0, screen1.width - 1, screen1.height - 1 , gfColor( 0, 0, 0 ) ); 
+    gfFillRect( &screen2, 0, 0, screen1.width - 1, screen1.height - 1 , gfColor( 0, 0, 0 ) ); 
+    
+    //init filesystem
+    rv = osFInit();
 
 
-	gfLoadBitmapFS( &textureMap, (char*)"ctexture.gbm" );
+    gfLoadBitmapFS( &textureMap, (char*)"ctexture.gbm" );
 
-	heightMap = (uchar*)osAlloc( 262144, OS_ALLOC_MEMF_FAST );
+    heightMap = (uchar*)osAlloc( 262144, OS_ALLOC_MEMF_FAST );
 
-	if( !osFOpen( &in, (char*)"cheight.raw" , OS_FILE_READ ) )
-	{
-		osFRead( &in, (uchar*)heightMap, 262144, NULL );
-		osFClose( &in );
-	}
-	
-	i = 0;
-	
-	do
-	{	
-		animLeds( i++ );
-		
-		gfDisplayBitmap( &screen2 );
-		do{}while( ! bsp->videoVSync );
-		
-		camera.x -= (float)sin( camera.angle ) * 1.1f;
-		camera.y -= (float)cos( camera.angle ) * 1.1f;
+    if( !osFOpen( &in, (char*)"cheight.raw" , OS_FILE_READ ) )
+    {
+        osFRead( &in, (uchar*)heightMap, 262144, NULL );
+        osFClose( &in );
+    }
+    
+    i = 0;
+    
+    do
+    {   
+        animLeds( i++ );
+        
+        gfDisplayBitmap( &screen2 );
+        do{}while( ! bsp->videoVSync );
+        
+        camera.x -= (float)sin( camera.angle ) * 1.1f;
+        camera.y -= (float)cos( camera.angle ) * 1.1f;
 
-		commanche( &screen1 );
+        commanche( &screen1 );
 
-		animLeds( i++ );
+        animLeds( i++ );
 
-		gfDisplayBitmap( &screen1 );
-		do{}while( ! bsp->videoVSync );
-		
-		camera.x -= (float)sin( camera.angle ) * 1.1f;
-		camera.y -= (float)cos( camera.angle ) * 1.1f;
+        gfDisplayBitmap( &screen1 );
+        do{}while( ! bsp->videoVSync );
+        
+        camera.x -= (float)sin( camera.angle ) * 1.1f;
+        camera.y -= (float)cos( camera.angle ) * 1.1f;
 
-		commanche( &screen2 );
-		
-	}while( 1 ); 
-	
+        commanche( &screen2 );
+        
+    }while( 1 ); 
+    
 } 

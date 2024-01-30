@@ -91,11 +91,11 @@ END component;
 --signals
 
 type  dmaState_T is ( dmaIdle, dmaGfxFetch0, dmaGfxFetch1, dmaGfxFetch2, dmaGfxFetch3, dmaGfxFetch4, dmaGfxFetch5,
-                     dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, dmaCpuWrite3, dmaCpuWrite4, 
+                     dmaCpuWrite0, dmaCpuWrite1, dmaCpuWrite2, 
                      dmaCpuRead0, dmaCpuRead1, dmaCpuRead2, dmaCpuRead3, dmaCpuRead4,
-                     dmaCh2Write0, dmaCh2Write1, dmaCh2Write2, dmaCh2Write3, dmaCh2Write4, 
-                     dmaCh2Read0, dmaCh2Read1, dmaCh2Read2, dmaCh2Read3, dmaCh2Read4,
-                     dmaCh2Write32_0, dmaCh2Write32_1, dmaCh2Write32_2, dmaCh2Write32_3, dmaCh2Write32_4,
+                     dmaCh2Write0, dmaCh2Write1, dmaCh2Write2,  
+                     dmaCh2Read0, dmaCh2Read1, dmaCh2Read2,
+                     dmaCh2Write32_0, dmaCh2Write32_1, dmaCh2Write32_2, 
                      dmaCh2Read32_0, dmaCh2Read32_1, dmaCh2Read32_2, dmaCh2Read32_3, dmaCh2Read32_4               
                );
                      
@@ -410,7 +410,7 @@ begin
                
                if ch0TransferCounter = x"00" then
             
-                  --static ram signals
+                  
                   gds0_7n                    <= '1';
                   gds8_15n                   <= '1';
                   gds16_23n                  <= '1';
@@ -434,28 +434,22 @@ begin
          
             when dmaGfxFetch4 =>
          
-               ch0BufRamWe    <= '0';
+               ch0BufRamWe <= '0';
 
-               dmaState <= dmaIdle;          
+               dmaState    <= dmaIdle;          
 
          
             --ch2
             when dmaCh2Read0 =>
          
-               dmaState    <= dmaCh2Read2; -- skip waitstates
+               dmaState <= dmaCh2Read1; 
          
             when dmaCh2Read1 =>
          
-            
                dmaState <= dmaCh2Read2;
 
             when dmaCh2Read2 =>
-         
-               dmaState <= dmaCh2Read3;
-            
-            
-            when dmaCh2Read3 =>
-         
+                  
                if ch2A( 0 ) = '0' then
             
                   ch2Dout( 15 downto 0 )  <= gd( 15 downto 0 );
@@ -466,7 +460,7 @@ begin
                
                end if;
                
-               ch2Ready             <= '1';
+               ch2Ready    <= '1';
                
                gds0_7n     <= '1';
                gds8_15n    <= '1';
@@ -479,13 +473,15 @@ begin
             
             when dmaCh2Write0 =>
          
-               gwen     <= '0';
+               gwen     <= '1';
             
-               dmaState <= dmaCh2Write2;  
+               dmaState <= dmaCh2Write1;  
 
             when dmaCh2Write1 =>
+
+               ch2Ready <= '1';
             
-               gwen     <= '1';
+               gwen     <= '0';
             
                dmaState <= dmaCh2Write2;
             
@@ -501,29 +497,12 @@ begin
                goen        <= '1';
             
                gd          <= ( others => 'Z' );
-            
-               dmaState <= dmaCh2Write3;
-
-            when dmaCh2Write3 =>
-            
-               gwen        <= '1';
-         
-               gds0_7n     <= '1';
-               gds8_15n    <= '1';
-               gds16_23n   <= '1';
-               gds24_31n   <= '1';
-               gwen        <= '1';
-               goen        <= '1';
-            
-               gd          <= ( others => 'Z' );
-            
-               ch2Ready             <= '1';
-               
-               dmaState    <= dmaIdle;       
+                           
+               dmaState    <= dmaIdle;                   
 
             when dmaCh2Read32_0 =>
          
-               dmaState    <= dmaCh2Read32_1; 
+               dmaState <= dmaCh2Read32_1; 
          
             when dmaCh2Read32_1 =>
          
@@ -537,7 +516,7 @@ begin
          
                ch2Dout  <= gd;            
 
-               ch2Ready             <= '1';
+               ch2Ready    <= '1';
             
                gds0_7n     <= '1';
                gds8_15n    <= '1';
@@ -550,15 +529,17 @@ begin
 
             when dmaCh2Write32_0 =>
          
-               gwen     <= '0';
+               gwen     <= '1';
             
                dmaState <= dmaCh2Write32_1;  
 
             when dmaCh2Write32_1 =>
             
-               gwen     <= '1';
+               ch2Ready <= '1';
+
+               gwen     <= '0';
             
-               dmaState <= dmaCh2Write32_3;
+               dmaState <= dmaCh2Write32_2;
             
             when dmaCh2Write32_2 =>
             
@@ -572,25 +553,9 @@ begin
                goen        <= '1';
             
                gd          <= ( others => 'Z' );
-            
-               dmaState <= dmaCh2Write32_3;
 
-            when dmaCh2Write32_3 =>
-            
-               gwen        <= '1';
-         
-               gds0_7n     <= '1';
-               gds8_15n    <= '1';
-               gds16_23n   <= '1';
-               gds24_31n   <= '1';
-               gwen        <= '1';
-               goen        <= '1';
-            
-               gd          <= ( others => 'Z' );
-
-               ch2Ready    <= '1';
                
-               dmaState    <= dmaIdle;          
+               dmaState    <= dmaIdle;                      
          
             --ch3
             when dmaCpuRead0 =>
@@ -632,8 +597,9 @@ begin
                
             
             when dmaCpuWrite0 =>
-         
-         
+                  
+               ready    <= '1';
+
                gwen     <= '1';
             
                dmaState <= dmaCpuWrite1;  
@@ -642,21 +608,9 @@ begin
             
                gwen     <= '0';
             
-               dmaState <= dmaCpuWrite4;
+               dmaState <= dmaCpuWrite2;
 
             when dmaCpuWrite2 =>
-            
-               gwen     <= '0';
-            
-               dmaState <= dmaCpuWrite3;  
-            
-            when dmaCpuWrite3 =>
-   
-               gwen        <= '1';
-            
-               dmaState <= dmaCpuWrite4;
-
-            when dmaCpuWrite4 =>
             
                gwen        <= '1';
          
@@ -669,14 +623,12 @@ begin
             
                gd          <= ( others => 'Z' );
             
-               ready       <= '1';
-
                if ce = '0' then
             
                   ready    <= '0';
                   dmaState <= dmaIdle;
             
-               end if;
+               end if;            
                      
          
             when others =>
