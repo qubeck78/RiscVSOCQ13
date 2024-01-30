@@ -412,7 +412,7 @@ int main()
 
 
 
-	print( (char*)"\n\nC4 RV bootloader B20240123\n\nWaiting for data\n\n" );
+	print( (char*)"\n\nC4 RV bootloader B20240130\n\nWaiting for data\n\n" );
 	
 	for( i = 0; i < 16; i++ )
 	{

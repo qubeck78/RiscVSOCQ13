@@ -20,9 +20,53 @@
 			"file": "/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.h",
 			"settings":
 			{
-				"buffer_size": 7101,
+				"buffer_size": 6754,
+				"encoding": "UTF-8",
 				"line_ending": "Windows"
-			}
+			},
+			"undo_stack":
+			[
+				[
+					12,
+					1,
+					"right_delete",
+					null,
+					"AQAAAHgBAAAAAAAAeAEAAAAAAAC5AAAAICAgIC8vd3IgLSBzZW5kIGRhdGEgdmlhIHVhcnQsIHJkIC0gcmVhZCByZWNlaXZlZCBkYXRhCiAgICB2b2xhdGlsZSB1bnNpZ25lZCBsb25nIF91bnVzZWQwOwoKICAgIC8vYjAgLSBzdURhdGFSZWNlaXZlZFJlYWR5LCBiMSAtIHN1RGF0YVNlbmRlclJlYWR5CiAgICB2b2xhdGlsZSB1bnNpZ25lZCBsb25nIF91bnVzZWQxOwo",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB4AQAAAAAAADECAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					15,
+					1,
+					"left_delete",
+					null,
+					"AQAAAHwBAAAAAAAAfAEAAAAAAAABAAAACg",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB9AQAAAAAAAH0BAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					16,
+					1,
+					"right_delete",
+					null,
+					"AQAAAHwBAAAAAAAAfAEAAAAAAAAEAAAAICAgIA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB8AQAAAAAAAHwBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					23,
+					1,
+					"right_delete",
+					null,
+					"AQAAAIQCAAAAAAAAhAIAAAAAAACcAAAAICAgIC8vd3IgLSBzZW5kIGRhdGEgdmlhIHNwaSwgcmQgLSByZWFkIHJlY2VpdmVkIGRhdGEKICAgIHZvbGF0aWxlIHVuc2lnbmVkIGxvbmcgX3VudXNlZDI7CiAgICAKICAgIC8vcmQgYjAgLSBzcGlSZWFkeQogICAgdm9sYXRpbGUgdW5zaWduZWQgbG9uZyBfdW51c2VkMzsK",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACEAgAAAAAAACADAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					24,
+					1,
+					"left_delete",
+					null,
+					"AQAAAIMCAAAAAAAAgwIAAAAAAAABAAAACg",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACEAgAAAAAAAIQCAAAAAAAAAAAAAAAA8L8"
+				]
+			]
 		}
 	],
 	"build_system": "Packages/User/make send.sublime-build",
@@ -241,6 +285,7 @@
 				{
 					"buffer": 0,
 					"file": "main.cpp",
+					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
@@ -251,8 +296,8 @@
 						"selection":
 						[
 							[
-								367,
-								367
+								1051,
+								1051
 							]
 						],
 						"settings":
@@ -265,26 +310,25 @@
 						"translation.y": 342.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"stack_multiselect": false,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
 					"file": "/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.h",
-					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 7101,
+						"buffer_size": 6754,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								791,
+								791
 							]
 						],
 						"settings":
@@ -294,10 +338,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 57.0,
+						"translation.y": 228.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"stack_multiselect": false,
 					"type": "text"
 				}
