@@ -14,10 +14,15 @@
 				"buffer_size": 10225,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
-			},
-			"undo_stack":
-			[
-			]
+			}
+		},
+		{
+			"file": "/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.h",
+			"settings":
+			{
+				"buffer_size": 7101,
+				"line_ending": "Windows"
+			}
 		}
 	],
 	"build_system": "Packages/User/make send.sublime-build",
@@ -159,12 +164,12 @@
 	],
 	"file_history":
 	[
+		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.cpp",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/slideshow/startup.S",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/diskio.h",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/slideshow/Makefile",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/slideshow/main.cpp",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.h",
-		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.cpp",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/diskio.cpp",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/C4RiscVSOCTop.vhd",
 		"/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscV/gfxLib/osUIEvents.h",
@@ -236,7 +241,6 @@
 				{
 					"buffer": 0,
 					"file": "main.cpp",
-					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
@@ -259,6 +263,38 @@
 						},
 						"translation.x": 0.0,
 						"translation.y": 342.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/C/Users/qubec/Documents/Development/ProjektyVHDL/C4BaseBoard/RiscVSOCQ13/software/gfxLib/bsp.h",
+					"selected": true,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7101,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 57.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
