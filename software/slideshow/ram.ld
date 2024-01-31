@@ -10,6 +10,7 @@ MEMORY
 		 ram 	: ORIGIN = 0x30000000, LENGTH = 0x0007ffff
 		 eram   : ORIGIN = 0x30080000, LENGTH = 0
 
+
 /* sdram - last 512KB of 32MB */
 /*		 ram 	: ORIGIN = 0x41f80000, LENGTH = 0x0007ffff
 		 eram   : ORIGIN = 0x42000000, LENGTH = 0
