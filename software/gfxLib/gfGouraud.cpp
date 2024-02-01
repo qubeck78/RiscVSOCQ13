@@ -10,22 +10,7 @@ extern BSP_T *bsp;
 
 #endif
 
-#ifdef _GFXLIB_WINDOWS
 
-  #include <stdio.h>
-  #include <vcl.h>
-
-#endif
-
-#ifdef _GFXLIB_ESP32_FFAT
-
-  #define NDEBUG
-
-  #include "FS.h"
-  #include "FFat.h"
-
-
-#endif
 
 //https://austinmorlan.com/posts/drawing_a_triangle/
 

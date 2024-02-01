@@ -1,6 +1,23 @@
 #ifndef _BSP_H
 #define _BSP_H
 
+
+//Memory regions
+
+//7.5MB
+#define _SYSTEM_MEMORY_SIZE 	( 7864320 - 16)
+#define _SYSTEM_MEMORY_BASE		0x20000000
+
+//512 KB
+#define _FASTRAM_MEMORY_SIZE	524288
+#define _FASTRAM_MEMORY_BASE	0x30000000
+
+//31.5 MB
+#define _SDRAM_MEMORY_SIZE		0x01F80000
+#define _SDRAM_MEMORY_BASE		0x40000000
+
+
+
 #define _VIDEOMODE_TEXT40_ONLY              0x00
 #define _VIDEOMODE_TEXT80_ONLY              0x04
 
