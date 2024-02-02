@@ -4,10 +4,9 @@
 #include "gfTypes.h"
 
 
-#ifdef _GFXLIB_WINDOWS
+#ifdef _GFXLIB_SDL
 
   #include <stdio.h>
-  #include <vcl.h>
 
 #endif
 
@@ -49,7 +48,7 @@
 typedef struct _tosFile
 {
 
-#ifdef _GFXLIB_WINDOWS
+#ifdef _GFXLIB_SDL
 	FILE *fd;
 #endif
 
@@ -57,17 +56,10 @@ typedef struct _tosFile
 	File fd;
 #endif
 
-#ifdef _GFXLIB_STM32_FATFS
+#if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
 	FIL 	fd;
 #endif
 
-#ifdef _GFXLIB_MC68K_FATFS
-	FIL		fd;
-#endif
-
-#ifdef _GFXLIB_RISCV_FATFS
-	FIL		fd;
-#endif
 
 }tosFile;
 

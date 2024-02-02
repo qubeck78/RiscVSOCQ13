@@ -8,21 +8,8 @@
 #include "../gfxLib/gfBitmap.h"
 #include "../gfxLib/gfDrawing.h"
 #include "../gfxLib/gfFont.h"
-#include "../gfxLib/gfGouraud.h"
-#include "../gfxLib/gfJPEG.h"
-
-
-#include "../gfxLib/ff.h" 
 
 #define _MODE640
-
-extern	FATFS			fatfs;			//fs object defined in osFile.cpp
-
-FRESULT 			 	rc;             /* Result code */
-FIL 				 	fil;                /* File object */
-DIR 				 	dir;                /* Directory object */
-FILINFO 			 	fno;            /* File information object */ 
-
 
 extern tgfTextOverlay	con;
 tgfBitmap 			 	screen;
@@ -30,6 +17,8 @@ tgfBitmap 			 	screen;
 
 int animLeds( int j )
 {	
+
+	#if defined( _GFXLIB_RISCV_FATFS )
 		switch( j % 2 )
 		{
 			case 0:
@@ -46,7 +35,8 @@ int animLeds( int j )
 				break;
 
 		}
-		
+
+	#endif		
 	return 0;
 } 
 
@@ -262,9 +252,9 @@ int main()
 	int rv;
 	
 	volatile int j;
-		
+	
 	bspInit();
-		
+
 	
 	#ifdef _MODE640
 	
@@ -303,7 +293,8 @@ int main()
 	gfFillRect( &screen, 0, 0, screen.width - 1, screen.height - 1 , gfColor( 0, 0, 0 ) ); 
 	
 		 
-
+	toPrint( &con, (char*)"Fractal" );
+	
 /*		ffMandelbrot( &screen, -1.7f,  -1.4f, 0.005f, 0.005f );
 
 		delayMs( 30000 );
@@ -316,8 +307,9 @@ int main()
 	{
 		ffMandelbrot( &screen, ( randomNumber() >> 7 ) & 7, -1.7f + ((ulong)randomNumber() ) / 3294967296.0f ,  -1.7f + ((ulong)randomNumber() ) / 3294967296.0f , 0.001f, 0.001f );
 
-		delayMs( 30000 );
+//		delayMs( 30000 );
 
+		delayMs( 1000 );
 		
 	}while( 1 );
 	
