@@ -13,12 +13,23 @@
 #include "../gfxLib/gfJPEG.h"
 #include "../gfxLib/osUIEvents.h"
 #include "../gfxLib/usbHID.h"
+
+#ifdef _GFXLIB_RISCV_FATFS
+
 #include "../gfxLib/ff.h" 
+
+#endif
 
 #include "shellUI.h"
 #include "objViewer.h"
 
+
+#ifdef _GFXLIB_RISCV_FATFS
+
 extern	FATFS			fatfs;			//fs object defined in osFile.cpp
+
+#endif
+
 extern	tgfTextOverlay	con;
 
 
@@ -144,9 +155,11 @@ int init()
 
 	gfFillRect( &zBuffer, 0, 0, zBuffer.width - 1, zBuffer.height - 1 , gfColor( 0, 0, 0 ) ); 
 
+	#ifdef _GFXLIB_RISCV_FATFS
+	
 	//init usb HID stack
 	rv = usbHIDInit();
-	
+
 	if( rv )
 	{
 		toPrint( &con, ( char* )"USB HID init error\n" );
@@ -156,8 +169,11 @@ int init()
 
 	}
 
+	#endif
+
 	//init events queue
 	osUIEventsInit(); 
+
 
 	//init filesystem
 	rv = osFInit();
@@ -171,15 +187,14 @@ int init()
 	}
 
 
-	rv = gfLoadBitmapFS( &background, ( char* )"0:background.gbm" );
-
+	rv = gfLoadBitmapFS( &background, ( char* )"background.gbm" );
 	if( rv )
 	{
 		toPrint( &con, ( char* )"Can't load background.gbm\n" );
 		
 		return rv;
-
 	}
+
 
 	gfBlitBitmap( &screen, &background, 0, 0 );
 
@@ -271,7 +286,6 @@ int asciiTable()
 
 	do
 	{
-		usbHIDHandleEvents();
 	
 		if( !osGetUIEvent( &event ) )
 		{
@@ -343,7 +357,6 @@ int viewImage( char* fileName )
 
 		do
 		{
-			usbHIDHandleEvents();
 		
 			if( !osGetUIEvent( &event ) )
 			{
@@ -419,7 +432,6 @@ int viewFont( char* fileName )
 
 		do
 		{
-			usbHIDHandleEvents();
 		
 			if( !osGetUIEvent( &event ) )
 			{
@@ -517,7 +529,6 @@ int viewHex( char* fileName )
 
 		do
 		{
-			usbHIDHandleEvents();
 		
 			if( !osGetUIEvent( &event ) )
 			{
@@ -617,13 +628,14 @@ int remountSD()
 	tosUIEvent		event;
 
 	//unmount sd
+
+	#ifdef _GFXLIB_RISCV_FATFS
 	f_mount( 0, NULL );
 
 	uiDrawInfoWindow( (char*)"Card unmounted", (char*)"Insert new card and press any key" );
 
 	do
 	{
-		usbHIDHandleEvents();
 	
 		if( !osGetUIEvent( &event ) )
 		{
@@ -652,7 +664,6 @@ int remountSD()
 
 	do
 	{
-		usbHIDHandleEvents();
 	
 		if( !osGetUIEvent( &event ) )
 		{
@@ -663,6 +674,7 @@ int remountSD()
 
 	}while( 1 );
 
+	#endif
 
 	return 0;
 }
@@ -687,9 +699,19 @@ int main()
 	//default selector window height
 	selectorWindowHeight	= 26;
 
+	
 
 	//default path
-	strcpy( path, "0:" );
+
+	#ifdef _GFXLIB_SDL
+
+		strcpy( path, "." );
+
+	#else
+
+		strcpy( path, "0:" );
+
+	#endif
 
 	uiReadDirAndFillSelectorWindowContents();
 
@@ -721,7 +743,6 @@ int main()
 		}
 
 
-		usbHIDHandleEvents();
 		
 		if( !osGetUIEvent( &event ) )
 		{
@@ -817,7 +838,16 @@ int main()
 						selectorCursorPos = 0;
 
 						//default path
-						strcpy( path, "0:" );
+
+						#ifdef _GFXLIB_SDL
+
+							strcpy( path, "." );
+
+						#else
+
+							strcpy( path, "0:" );
+
+						#endif
 
 						uiReadDirAndFillSelectorWindowContents();
 

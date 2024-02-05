@@ -24,6 +24,8 @@ ulong osAllocInit()
 ulong osAllocAddNode( ulong nodeNumber, void *allocStart, ulong memorySize, ulong nodeFlags )
 {
 	ulong i;
+	long long li;
+
 	tosAllocMemoryNode *node;
 
 
@@ -48,17 +50,17 @@ ulong osAllocAddNode( ulong nodeNumber, void *allocStart, ulong memorySize, ulon
 	node->allocStart       = (void*)( (uchar*)node->blockBitmap + node->blockBitmapSize );
 
 	//align alloc start to block boundary
-	i = (ulong)node->allocStart;
+	li = (long long)node->allocStart;
 
-	if( i % _OS_ALLOC_BLOCK_SIZE )
+	if( li % _OS_ALLOC_BLOCK_SIZE )
 	{
-		i += _OS_ALLOC_BLOCK_SIZE;
+		li += _OS_ALLOC_BLOCK_SIZE;
 	}
 
-	i = i / _OS_ALLOC_BLOCK_SIZE;
-	i = i * _OS_ALLOC_BLOCK_SIZE;
+	li = li / _OS_ALLOC_BLOCK_SIZE;
+	li = li * _OS_ALLOC_BLOCK_SIZE;
 
-	node->allocStart = (void*)i;
+	node->allocStart = (void*)li;
 
 	//calculate alloc end
 	node->allocEnd = (void*)( (uchar*) allocStart + memorySize );

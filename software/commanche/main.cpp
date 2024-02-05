@@ -17,12 +17,6 @@
 
 extern BSP_T        *bsp;
 
-FRESULT              rc;             /* Result code */
-extern FATFS         fatfs;            /* File system object */
-//FIL                fil;                /* File object */
-//DIR                dir;                /* Directory object */
-//FILINFO            fno;            /* File information object */ 
-
 
 extern tgfTextOverlay        con;
 tgfBitmap            screen1;

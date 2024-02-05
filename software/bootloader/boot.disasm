@@ -1,0 +1,1022 @@
+
+boot.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <__text_start>:
+   0:	0100006f          	j	10 <start>
+   4:	00000013          	nop
+   8:	00000013          	nop
+   c:	00000013          	nop
+
+00000010 <start>:
+  10:	30080137          	lui	sp,0x30080
+  14:	ff010113          	addi	sp,sp,-16 # 3007fff0 <__ramend+0x2fe7fff0>
+  18:	00012023          	sw	zero,0(sp)
+  1c:	00012223          	sw	zero,4(sp)
+  20:	00012423          	sw	zero,8(sp)
+  24:	00012623          	sw	zero,12(sp)
+  28:	3b1000ef          	jal	ra,bd8 <main>
+  2c:	0000006f          	j	2c <start+0x1c>
+
+00000030 <_Z5printPc>:
+  30:	fd010113          	addi	sp,sp,-48
+  34:	02812623          	sw	s0,44(sp)
+  38:	03010413          	addi	s0,sp,48
+  3c:	fca42e23          	sw	a0,-36(s0)
+  40:	fe042623          	sw	zero,-20(s0)
+  44:	fec42783          	lw	a5,-20(s0)
+  48:	00178713          	addi	a4,a5,1
+  4c:	fee42623          	sw	a4,-20(s0)
+  50:	00078713          	mv	a4,a5
+  54:	fdc42783          	lw	a5,-36(s0)
+  58:	00e787b3          	add	a5,a5,a4
+  5c:	0007c783          	lbu	a5,0(a5)
+  60:	fef405a3          	sb	a5,-21(s0)
+  64:	feb44783          	lbu	a5,-21(s0)
+  68:	00f037b3          	snez	a5,a5
+  6c:	0ff7f793          	andi	a5,a5,255
+  70:	0c078263          	beqz	a5,134 <_Z5printPc+0x104>
+  74:	feb44703          	lbu	a4,-21(s0)
+  78:	00d00793          	li	a5,13
+  7c:	fcf704e3          	beq	a4,a5,44 <_Z5printPc+0x14>
+  80:	feb44703          	lbu	a4,-21(s0)
+  84:	00a00793          	li	a5,10
+  88:	04f71c63          	bne	a4,a5,e0 <_Z5printPc+0xb0>
+  8c:	000017b7          	lui	a5,0x1
+  90:	2d47a703          	lw	a4,724(a5) # 12d4 <screenIndex>
+  94:	000017b7          	lui	a5,0x1
+  98:	2d47a683          	lw	a3,724(a5) # 12d4 <screenIndex>
+  9c:	02800793          	li	a5,40
+  a0:	02f6e7b3          	rem	a5,a3,a5
+  a4:	40f70733          	sub	a4,a4,a5
+  a8:	000017b7          	lui	a5,0x1
+  ac:	2ce7aa23          	sw	a4,724(a5) # 12d4 <screenIndex>
+  b0:	000017b7          	lui	a5,0x1
+  b4:	2d47a783          	lw	a5,724(a5) # 12d4 <screenIndex>
+  b8:	02878713          	addi	a4,a5,40
+  bc:	000017b7          	lui	a5,0x1
+  c0:	2ce7aa23          	sw	a4,724(a5) # 12d4 <screenIndex>
+  c4:	000017b7          	lui	a5,0x1
+  c8:	2d47a703          	lw	a4,724(a5) # 12d4 <screenIndex>
+  cc:	36f00793          	li	a5,879
+  d0:	f6e7dae3          	bge	a5,a4,44 <_Z5printPc+0x14>
+  d4:	000017b7          	lui	a5,0x1
+  d8:	2c07aa23          	sw	zero,724(a5) # 12d4 <screenIndex>
+  dc:	f69ff06f          	j	44 <_Z5printPc+0x14>
+  e0:	feb44783          	lbu	a5,-21(s0)
+  e4:	01079713          	slli	a4,a5,0x10
+  e8:	41075713          	srai	a4,a4,0x10
+  ec:	000017b7          	lui	a5,0x1
+  f0:	d0078793          	addi	a5,a5,-768 # d00 <main+0x128>
+  f4:	00f767b3          	or	a5,a4,a5
+  f8:	01079593          	slli	a1,a5,0x10
+  fc:	4105d593          	srai	a1,a1,0x10
+ 100:	000017b7          	lui	a5,0x1
+ 104:	2d87a703          	lw	a4,728(a5) # 12d8 <displayRam>
+ 108:	000017b7          	lui	a5,0x1
+ 10c:	2d47a783          	lw	a5,724(a5) # 12d4 <screenIndex>
+ 110:	00178613          	addi	a2,a5,1
+ 114:	000016b7          	lui	a3,0x1
+ 118:	2cc6aa23          	sw	a2,724(a3) # 12d4 <screenIndex>
+ 11c:	00179793          	slli	a5,a5,0x1
+ 120:	00f707b3          	add	a5,a4,a5
+ 124:	01059713          	slli	a4,a1,0x10
+ 128:	01075713          	srli	a4,a4,0x10
+ 12c:	00e79023          	sh	a4,0(a5)
+ 130:	f15ff06f          	j	44 <_Z5printPc+0x14>
+ 134:	00000793          	li	a5,0
+ 138:	00078513          	mv	a0,a5
+ 13c:	02c12403          	lw	s0,44(sp)
+ 140:	03010113          	addi	sp,sp,48
+ 144:	00008067          	ret
+
+00000148 <_Z8uartGetCv>:
+ 148:	fe010113          	addi	sp,sp,-32
+ 14c:	00812e23          	sw	s0,28(sp)
+ 150:	02010413          	addi	s0,sp,32
+ 154:	000017b7          	lui	a5,0x1
+ 158:	2507a783          	lw	a5,592(a5) # 1250 <uart0>
+ 15c:	0047a783          	lw	a5,4(a5)
+ 160:	0017f793          	andi	a5,a5,1
+ 164:	00f037b3          	snez	a5,a5
+ 168:	0ff7f793          	andi	a5,a5,255
+ 16c:	00078a63          	beqz	a5,180 <_Z8uartGetCv+0x38>
+ 170:	000017b7          	lui	a5,0x1
+ 174:	2507a783          	lw	a5,592(a5) # 1250 <uart0>
+ 178:	0007a783          	lw	a5,0(a5)
+ 17c:	0080006f          	j	184 <_Z8uartGetCv+0x3c>
+ 180:	fff00793          	li	a5,-1
+ 184:	00078513          	mv	a0,a5
+ 188:	01c12403          	lw	s0,28(sp)
+ 18c:	02010113          	addi	sp,sp,32
+ 190:	00008067          	ret
+
+00000194 <_Z8uartPutCh>:
+ 194:	fe010113          	addi	sp,sp,-32
+ 198:	00812e23          	sw	s0,28(sp)
+ 19c:	02010413          	addi	s0,sp,32
+ 1a0:	00050793          	mv	a5,a0
+ 1a4:	fef407a3          	sb	a5,-17(s0)
+ 1a8:	000017b7          	lui	a5,0x1
+ 1ac:	2507a783          	lw	a5,592(a5) # 1250 <uart0>
+ 1b0:	0047a783          	lw	a5,4(a5)
+ 1b4:	0027f793          	andi	a5,a5,2
+ 1b8:	0017b793          	seqz	a5,a5
+ 1bc:	0ff7f793          	andi	a5,a5,255
+ 1c0:	00078463          	beqz	a5,1c8 <_Z8uartPutCh+0x34>
+ 1c4:	fe5ff06f          	j	1a8 <_Z8uartPutCh+0x14>
+ 1c8:	000017b7          	lui	a5,0x1
+ 1cc:	2507a783          	lw	a5,592(a5) # 1250 <uart0>
+ 1d0:	fef44703          	lbu	a4,-17(s0)
+ 1d4:	00e7a023          	sw	a4,0(a5)
+ 1d8:	00000793          	li	a5,0
+ 1dc:	00078513          	mv	a0,a5
+ 1e0:	01c12403          	lw	s0,28(sp)
+ 1e4:	02010113          	addi	sp,sp,32
+ 1e8:	00008067          	ret
+
+000001ec <_Z8uartGetSPci>:
+ 1ec:	fd010113          	addi	sp,sp,-48
+ 1f0:	02112623          	sw	ra,44(sp)
+ 1f4:	02812423          	sw	s0,40(sp)
+ 1f8:	03010413          	addi	s0,sp,48
+ 1fc:	fca42e23          	sw	a0,-36(s0)
+ 200:	fcb42c23          	sw	a1,-40(s0)
+ 204:	fe042623          	sw	zero,-20(s0)
+ 208:	f41ff0ef          	jal	ra,148 <_Z8uartGetCv>
+ 20c:	fea42423          	sw	a0,-24(s0)
+ 210:	fe842703          	lw	a4,-24(s0)
+ 214:	fff00793          	li	a5,-1
+ 218:	00f71463          	bne	a4,a5,220 <_Z8uartGetSPci+0x34>
+ 21c:	fedff06f          	j	208 <_Z8uartGetSPci+0x1c>
+ 220:	fe842783          	lw	a5,-24(s0)
+ 224:	fef403a3          	sb	a5,-25(s0)
+ 228:	fe744703          	lbu	a4,-25(s0)
+ 22c:	00d00793          	li	a5,13
+ 230:	04f70863          	beq	a4,a5,280 <_Z8uartGetSPci+0x94>
+ 234:	fe744703          	lbu	a4,-25(s0)
+ 238:	00a00793          	li	a5,10
+ 23c:	04f70263          	beq	a4,a5,280 <_Z8uartGetSPci+0x94>
+ 240:	fd842783          	lw	a5,-40(s0)
+ 244:	fff78793          	addi	a5,a5,-1
+ 248:	fec42703          	lw	a4,-20(s0)
+ 24c:	02f75a63          	bge	a4,a5,280 <_Z8uartGetSPci+0x94>
+ 250:	fec42783          	lw	a5,-20(s0)
+ 254:	00178713          	addi	a4,a5,1
+ 258:	fee42623          	sw	a4,-20(s0)
+ 25c:	00078713          	mv	a4,a5
+ 260:	fdc42783          	lw	a5,-36(s0)
+ 264:	00e787b3          	add	a5,a5,a4
+ 268:	fe744703          	lbu	a4,-25(s0)
+ 26c:	00e78023          	sb	a4,0(a5)
+ 270:	fec42783          	lw	a5,-20(s0)
+ 274:	fdc42703          	lw	a4,-36(s0)
+ 278:	00f707b3          	add	a5,a4,a5
+ 27c:	00078023          	sb	zero,0(a5)
+ 280:	fe744703          	lbu	a4,-25(s0)
+ 284:	00a00793          	li	a5,10
+ 288:	00f70463          	beq	a4,a5,290 <_Z8uartGetSPci+0xa4>
+ 28c:	f7dff06f          	j	208 <_Z8uartGetSPci+0x1c>
+ 290:	00000793          	li	a5,0
+ 294:	00078513          	mv	a0,a5
+ 298:	02c12083          	lw	ra,44(sp)
+ 29c:	02812403          	lw	s0,40(sp)
+ 2a0:	03010113          	addi	sp,sp,48
+ 2a4:	00008067          	ret
+
+000002a8 <_Z11hexToIDigitPci>:
+ 2a8:	fd010113          	addi	sp,sp,-48
+ 2ac:	02812623          	sw	s0,44(sp)
+ 2b0:	03010413          	addi	s0,sp,48
+ 2b4:	fca42e23          	sw	a0,-36(s0)
+ 2b8:	fcb42c23          	sw	a1,-40(s0)
+ 2bc:	fd842783          	lw	a5,-40(s0)
+ 2c0:	fdc42703          	lw	a4,-36(s0)
+ 2c4:	00f707b3          	add	a5,a4,a5
+ 2c8:	0007c783          	lbu	a5,0(a5)
+ 2cc:	fef407a3          	sb	a5,-17(s0)
+ 2d0:	fef44703          	lbu	a4,-17(s0)
+ 2d4:	02f00793          	li	a5,47
+ 2d8:	00e7fe63          	bgeu	a5,a4,2f4 <_Z11hexToIDigitPci+0x4c>
+ 2dc:	fef44703          	lbu	a4,-17(s0)
+ 2e0:	03900793          	li	a5,57
+ 2e4:	00e7e863          	bltu	a5,a4,2f4 <_Z11hexToIDigitPci+0x4c>
+ 2e8:	fef44783          	lbu	a5,-17(s0)
+ 2ec:	fd078793          	addi	a5,a5,-48
+ 2f0:	0500006f          	j	340 <_Z11hexToIDigitPci+0x98>
+ 2f4:	fef44703          	lbu	a4,-17(s0)
+ 2f8:	06000793          	li	a5,96
+ 2fc:	00e7fe63          	bgeu	a5,a4,318 <_Z11hexToIDigitPci+0x70>
+ 300:	fef44703          	lbu	a4,-17(s0)
+ 304:	06600793          	li	a5,102
+ 308:	00e7e863          	bltu	a5,a4,318 <_Z11hexToIDigitPci+0x70>
+ 30c:	fef44783          	lbu	a5,-17(s0)
+ 310:	fa978793          	addi	a5,a5,-87
+ 314:	02c0006f          	j	340 <_Z11hexToIDigitPci+0x98>
+ 318:	fef44703          	lbu	a4,-17(s0)
+ 31c:	04000793          	li	a5,64
+ 320:	00e7fe63          	bgeu	a5,a4,33c <_Z11hexToIDigitPci+0x94>
+ 324:	fef44703          	lbu	a4,-17(s0)
+ 328:	04600793          	li	a5,70
+ 32c:	00e7e863          	bltu	a5,a4,33c <_Z11hexToIDigitPci+0x94>
+ 330:	fef44783          	lbu	a5,-17(s0)
+ 334:	fc978793          	addi	a5,a5,-55
+ 338:	0080006f          	j	340 <_Z11hexToIDigitPci+0x98>
+ 33c:	fff00793          	li	a5,-1
+ 340:	00078513          	mv	a0,a5
+ 344:	02c12403          	lw	s0,44(sp)
+ 348:	03010113          	addi	sp,sp,48
+ 34c:	00008067          	ret
+
+00000350 <_Z10hexToIBytePci>:
+ 350:	fd010113          	addi	sp,sp,-48
+ 354:	02112623          	sw	ra,44(sp)
+ 358:	02812423          	sw	s0,40(sp)
+ 35c:	03010413          	addi	s0,sp,48
+ 360:	fca42e23          	sw	a0,-36(s0)
+ 364:	fcb42c23          	sw	a1,-40(s0)
+ 368:	fd842783          	lw	a5,-40(s0)
+ 36c:	00178713          	addi	a4,a5,1
+ 370:	fce42c23          	sw	a4,-40(s0)
+ 374:	00078593          	mv	a1,a5
+ 378:	fdc42503          	lw	a0,-36(s0)
+ 37c:	f2dff0ef          	jal	ra,2a8 <_Z11hexToIDigitPci>
+ 380:	fea42623          	sw	a0,-20(s0)
+ 384:	fec42703          	lw	a4,-20(s0)
+ 388:	fff00793          	li	a5,-1
+ 38c:	00f71663          	bne	a4,a5,398 <_Z10hexToIBytePci+0x48>
+ 390:	fff00793          	li	a5,-1
+ 394:	0380006f          	j	3cc <_Z10hexToIBytePci+0x7c>
+ 398:	fd842583          	lw	a1,-40(s0)
+ 39c:	fdc42503          	lw	a0,-36(s0)
+ 3a0:	f09ff0ef          	jal	ra,2a8 <_Z11hexToIDigitPci>
+ 3a4:	fea42423          	sw	a0,-24(s0)
+ 3a8:	fe842703          	lw	a4,-24(s0)
+ 3ac:	fff00793          	li	a5,-1
+ 3b0:	00f71663          	bne	a4,a5,3bc <_Z10hexToIBytePci+0x6c>
+ 3b4:	fff00793          	li	a5,-1
+ 3b8:	0140006f          	j	3cc <_Z10hexToIBytePci+0x7c>
+ 3bc:	fec42783          	lw	a5,-20(s0)
+ 3c0:	00479713          	slli	a4,a5,0x4
+ 3c4:	fe842783          	lw	a5,-24(s0)
+ 3c8:	00f767b3          	or	a5,a4,a5
+ 3cc:	00078513          	mv	a0,a5
+ 3d0:	02c12083          	lw	ra,44(sp)
+ 3d4:	02812403          	lw	s0,40(sp)
+ 3d8:	03010113          	addi	sp,sp,48
+ 3dc:	00008067          	ret
+
+000003e0 <_Z24decodeAndDisplayS0RecordPc>:
+ 3e0:	fc010113          	addi	sp,sp,-64
+ 3e4:	02112e23          	sw	ra,60(sp)
+ 3e8:	02812c23          	sw	s0,56(sp)
+ 3ec:	04010413          	addi	s0,sp,64
+ 3f0:	fca42623          	sw	a0,-52(s0)
+ 3f4:	00100593          	li	a1,1
+ 3f8:	fcc42503          	lw	a0,-52(s0)
+ 3fc:	f55ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 400:	fea42423          	sw	a0,-24(s0)
+ 404:	fe842703          	lw	a4,-24(s0)
+ 408:	fff00793          	li	a5,-1
+ 40c:	00f71663          	bne	a4,a5,418 <_Z24decodeAndDisplayS0RecordPc+0x38>
+ 410:	00100793          	li	a5,1
+ 414:	0780006f          	j	48c <_Z24decodeAndDisplayS0RecordPc+0xac>
+ 418:	fe042623          	sw	zero,-20(s0)
+ 41c:	fe842783          	lw	a5,-24(s0)
+ 420:	ffd78793          	addi	a5,a5,-3
+ 424:	fec42703          	lw	a4,-20(s0)
+ 428:	06f75063          	bge	a4,a5,488 <_Z24decodeAndDisplayS0RecordPc+0xa8>
+ 42c:	fec42783          	lw	a5,-20(s0)
+ 430:	00179793          	slli	a5,a5,0x1
+ 434:	00778793          	addi	a5,a5,7
+ 438:	00078593          	mv	a1,a5
+ 43c:	fcc42503          	lw	a0,-52(s0)
+ 440:	f11ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 444:	fea42223          	sw	a0,-28(s0)
+ 448:	fe442703          	lw	a4,-28(s0)
+ 44c:	fff00793          	li	a5,-1
+ 450:	00f71663          	bne	a4,a5,45c <_Z24decodeAndDisplayS0RecordPc+0x7c>
+ 454:	00100793          	li	a5,1
+ 458:	0340006f          	j	48c <_Z24decodeAndDisplayS0RecordPc+0xac>
+ 45c:	fe442783          	lw	a5,-28(s0)
+ 460:	0ff7f793          	andi	a5,a5,255
+ 464:	fcf40e23          	sb	a5,-36(s0)
+ 468:	fc040ea3          	sb	zero,-35(s0)
+ 46c:	fdc40793          	addi	a5,s0,-36
+ 470:	00078513          	mv	a0,a5
+ 474:	bbdff0ef          	jal	ra,30 <_Z5printPc>
+ 478:	fec42783          	lw	a5,-20(s0)
+ 47c:	00178793          	addi	a5,a5,1
+ 480:	fef42623          	sw	a5,-20(s0)
+ 484:	f99ff06f          	j	41c <_Z24decodeAndDisplayS0RecordPc+0x3c>
+ 488:	00000793          	li	a5,0
+ 48c:	00078513          	mv	a0,a5
+ 490:	03c12083          	lw	ra,60(sp)
+ 494:	03812403          	lw	s0,56(sp)
+ 498:	04010113          	addi	sp,sp,64
+ 49c:	00008067          	ret
+
+000004a0 <_Z21decodeAndSaveS1RecordPc>:
+ 4a0:	fc010113          	addi	sp,sp,-64
+ 4a4:	02112e23          	sw	ra,60(sp)
+ 4a8:	02812c23          	sw	s0,56(sp)
+ 4ac:	04010413          	addi	s0,sp,64
+ 4b0:	fca42623          	sw	a0,-52(s0)
+ 4b4:	fe042423          	sw	zero,-24(s0)
+ 4b8:	00200593          	li	a1,2
+ 4bc:	fcc42503          	lw	a0,-52(s0)
+ 4c0:	e91ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 4c4:	fea42223          	sw	a0,-28(s0)
+ 4c8:	fe442703          	lw	a4,-28(s0)
+ 4cc:	fff00793          	li	a5,-1
+ 4d0:	00f71663          	bne	a4,a5,4dc <_Z21decodeAndSaveS1RecordPc+0x3c>
+ 4d4:	00100793          	li	a5,1
+ 4d8:	0f80006f          	j	5d0 <_Z21decodeAndSaveS1RecordPc+0x130>
+ 4dc:	00400593          	li	a1,4
+ 4e0:	fcc42503          	lw	a0,-52(s0)
+ 4e4:	e6dff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 4e8:	fea42023          	sw	a0,-32(s0)
+ 4ec:	fe042703          	lw	a4,-32(s0)
+ 4f0:	fff00793          	li	a5,-1
+ 4f4:	00f71663          	bne	a4,a5,500 <_Z21decodeAndSaveS1RecordPc+0x60>
+ 4f8:	00100793          	li	a5,1
+ 4fc:	0d40006f          	j	5d0 <_Z21decodeAndSaveS1RecordPc+0x130>
+ 500:	fe042783          	lw	a5,-32(s0)
+ 504:	00879793          	slli	a5,a5,0x8
+ 508:	fcf42e23          	sw	a5,-36(s0)
+ 50c:	00600593          	li	a1,6
+ 510:	fcc42503          	lw	a0,-52(s0)
+ 514:	e3dff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 518:	fea42023          	sw	a0,-32(s0)
+ 51c:	fe042703          	lw	a4,-32(s0)
+ 520:	fff00793          	li	a5,-1
+ 524:	00f71663          	bne	a4,a5,530 <_Z21decodeAndSaveS1RecordPc+0x90>
+ 528:	00100793          	li	a5,1
+ 52c:	0a40006f          	j	5d0 <_Z21decodeAndSaveS1RecordPc+0x130>
+ 530:	fdc42703          	lw	a4,-36(s0)
+ 534:	fe042783          	lw	a5,-32(s0)
+ 538:	00f767b3          	or	a5,a4,a5
+ 53c:	fcf42e23          	sw	a5,-36(s0)
+ 540:	fdc42703          	lw	a4,-36(s0)
+ 544:	000027b7          	lui	a5,0x2
+ 548:	00f75663          	bge	a4,a5,554 <_Z21decodeAndSaveS1RecordPc+0xb4>
+ 54c:	00200793          	li	a5,2
+ 550:	0800006f          	j	5d0 <_Z21decodeAndSaveS1RecordPc+0x130>
+ 554:	fe042623          	sw	zero,-20(s0)
+ 558:	fe442783          	lw	a5,-28(s0)
+ 55c:	ffd78793          	addi	a5,a5,-3 # 1ffd <bootEntry+0xd21>
+ 560:	fec42703          	lw	a4,-20(s0)
+ 564:	06f75463          	bge	a4,a5,5cc <_Z21decodeAndSaveS1RecordPc+0x12c>
+ 568:	fec42783          	lw	a5,-20(s0)
+ 56c:	00478793          	addi	a5,a5,4
+ 570:	00179793          	slli	a5,a5,0x1
+ 574:	00078593          	mv	a1,a5
+ 578:	fcc42503          	lw	a0,-52(s0)
+ 57c:	dd5ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 580:	fea42023          	sw	a0,-32(s0)
+ 584:	fe042703          	lw	a4,-32(s0)
+ 588:	fff00793          	li	a5,-1
+ 58c:	00f71663          	bne	a4,a5,598 <_Z21decodeAndSaveS1RecordPc+0xf8>
+ 590:	00100793          	li	a5,1
+ 594:	03c0006f          	j	5d0 <_Z21decodeAndSaveS1RecordPc+0x130>
+ 598:	fdc42703          	lw	a4,-36(s0)
+ 59c:	fec42783          	lw	a5,-20(s0)
+ 5a0:	00f707b3          	add	a5,a4,a5
+ 5a4:	00078713          	mv	a4,a5
+ 5a8:	fe842783          	lw	a5,-24(s0)
+ 5ac:	00e787b3          	add	a5,a5,a4
+ 5b0:	fe042703          	lw	a4,-32(s0)
+ 5b4:	0ff77713          	andi	a4,a4,255
+ 5b8:	00e78023          	sb	a4,0(a5)
+ 5bc:	fec42783          	lw	a5,-20(s0)
+ 5c0:	00178793          	addi	a5,a5,1
+ 5c4:	fef42623          	sw	a5,-20(s0)
+ 5c8:	f91ff06f          	j	558 <_Z21decodeAndSaveS1RecordPc+0xb8>
+ 5cc:	00000793          	li	a5,0
+ 5d0:	00078513          	mv	a0,a5
+ 5d4:	03c12083          	lw	ra,60(sp)
+ 5d8:	03812403          	lw	s0,56(sp)
+ 5dc:	04010113          	addi	sp,sp,64
+ 5e0:	00008067          	ret
+
+000005e4 <_Z21decodeAndSaveS2RecordPc>:
+ 5e4:	fc010113          	addi	sp,sp,-64
+ 5e8:	02112e23          	sw	ra,60(sp)
+ 5ec:	02812c23          	sw	s0,56(sp)
+ 5f0:	04010413          	addi	s0,sp,64
+ 5f4:	fca42623          	sw	a0,-52(s0)
+ 5f8:	fe042423          	sw	zero,-24(s0)
+ 5fc:	00200593          	li	a1,2
+ 600:	fcc42503          	lw	a0,-52(s0)
+ 604:	d4dff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 608:	fea42223          	sw	a0,-28(s0)
+ 60c:	fe442703          	lw	a4,-28(s0)
+ 610:	fff00793          	li	a5,-1
+ 614:	00f71663          	bne	a4,a5,620 <_Z21decodeAndSaveS2RecordPc+0x3c>
+ 618:	00100793          	li	a5,1
+ 61c:	1300006f          	j	74c <_Z21decodeAndSaveS2RecordPc+0x168>
+ 620:	00400593          	li	a1,4
+ 624:	fcc42503          	lw	a0,-52(s0)
+ 628:	d29ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 62c:	fea42023          	sw	a0,-32(s0)
+ 630:	fe042703          	lw	a4,-32(s0)
+ 634:	fff00793          	li	a5,-1
+ 638:	00f71663          	bne	a4,a5,644 <_Z21decodeAndSaveS2RecordPc+0x60>
+ 63c:	00100793          	li	a5,1
+ 640:	10c0006f          	j	74c <_Z21decodeAndSaveS2RecordPc+0x168>
+ 644:	fe042783          	lw	a5,-32(s0)
+ 648:	01079793          	slli	a5,a5,0x10
+ 64c:	fcf42e23          	sw	a5,-36(s0)
+ 650:	00600593          	li	a1,6
+ 654:	fcc42503          	lw	a0,-52(s0)
+ 658:	cf9ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 65c:	fea42023          	sw	a0,-32(s0)
+ 660:	fe042703          	lw	a4,-32(s0)
+ 664:	fff00793          	li	a5,-1
+ 668:	00f71663          	bne	a4,a5,674 <_Z21decodeAndSaveS2RecordPc+0x90>
+ 66c:	00100793          	li	a5,1
+ 670:	0dc0006f          	j	74c <_Z21decodeAndSaveS2RecordPc+0x168>
+ 674:	fe042783          	lw	a5,-32(s0)
+ 678:	00879793          	slli	a5,a5,0x8
+ 67c:	fdc42703          	lw	a4,-36(s0)
+ 680:	00f767b3          	or	a5,a4,a5
+ 684:	fcf42e23          	sw	a5,-36(s0)
+ 688:	00800593          	li	a1,8
+ 68c:	fcc42503          	lw	a0,-52(s0)
+ 690:	cc1ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 694:	fea42023          	sw	a0,-32(s0)
+ 698:	fe042703          	lw	a4,-32(s0)
+ 69c:	fff00793          	li	a5,-1
+ 6a0:	00f71663          	bne	a4,a5,6ac <_Z21decodeAndSaveS2RecordPc+0xc8>
+ 6a4:	00100793          	li	a5,1
+ 6a8:	0a40006f          	j	74c <_Z21decodeAndSaveS2RecordPc+0x168>
+ 6ac:	fdc42703          	lw	a4,-36(s0)
+ 6b0:	fe042783          	lw	a5,-32(s0)
+ 6b4:	00f767b3          	or	a5,a4,a5
+ 6b8:	fcf42e23          	sw	a5,-36(s0)
+ 6bc:	fdc42703          	lw	a4,-36(s0)
+ 6c0:	000027b7          	lui	a5,0x2
+ 6c4:	00f75663          	bge	a4,a5,6d0 <_Z21decodeAndSaveS2RecordPc+0xec>
+ 6c8:	00200793          	li	a5,2
+ 6cc:	0800006f          	j	74c <_Z21decodeAndSaveS2RecordPc+0x168>
+ 6d0:	fe042623          	sw	zero,-20(s0)
+ 6d4:	fe442783          	lw	a5,-28(s0)
+ 6d8:	ffc78793          	addi	a5,a5,-4 # 1ffc <bootEntry+0xd20>
+ 6dc:	fec42703          	lw	a4,-20(s0)
+ 6e0:	06f75463          	bge	a4,a5,748 <_Z21decodeAndSaveS2RecordPc+0x164>
+ 6e4:	fec42783          	lw	a5,-20(s0)
+ 6e8:	00578793          	addi	a5,a5,5
+ 6ec:	00179793          	slli	a5,a5,0x1
+ 6f0:	00078593          	mv	a1,a5
+ 6f4:	fcc42503          	lw	a0,-52(s0)
+ 6f8:	c59ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 6fc:	fea42023          	sw	a0,-32(s0)
+ 700:	fe042703          	lw	a4,-32(s0)
+ 704:	fff00793          	li	a5,-1
+ 708:	00f71663          	bne	a4,a5,714 <_Z21decodeAndSaveS2RecordPc+0x130>
+ 70c:	00100793          	li	a5,1
+ 710:	03c0006f          	j	74c <_Z21decodeAndSaveS2RecordPc+0x168>
+ 714:	fdc42703          	lw	a4,-36(s0)
+ 718:	fec42783          	lw	a5,-20(s0)
+ 71c:	00f707b3          	add	a5,a4,a5
+ 720:	00078713          	mv	a4,a5
+ 724:	fe842783          	lw	a5,-24(s0)
+ 728:	00e787b3          	add	a5,a5,a4
+ 72c:	fe042703          	lw	a4,-32(s0)
+ 730:	0ff77713          	andi	a4,a4,255
+ 734:	00e78023          	sb	a4,0(a5)
+ 738:	fec42783          	lw	a5,-20(s0)
+ 73c:	00178793          	addi	a5,a5,1
+ 740:	fef42623          	sw	a5,-20(s0)
+ 744:	f91ff06f          	j	6d4 <_Z21decodeAndSaveS2RecordPc+0xf0>
+ 748:	00000793          	li	a5,0
+ 74c:	00078513          	mv	a0,a5
+ 750:	03c12083          	lw	ra,60(sp)
+ 754:	03812403          	lw	s0,56(sp)
+ 758:	04010113          	addi	sp,sp,64
+ 75c:	00008067          	ret
+
+00000760 <_Z21decodeAndSaveS3RecordPc>:
+ 760:	fc010113          	addi	sp,sp,-64
+ 764:	02112e23          	sw	ra,60(sp)
+ 768:	02812c23          	sw	s0,56(sp)
+ 76c:	04010413          	addi	s0,sp,64
+ 770:	fca42623          	sw	a0,-52(s0)
+ 774:	fe042423          	sw	zero,-24(s0)
+ 778:	00200593          	li	a1,2
+ 77c:	fcc42503          	lw	a0,-52(s0)
+ 780:	bd1ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 784:	fea42223          	sw	a0,-28(s0)
+ 788:	fe442703          	lw	a4,-28(s0)
+ 78c:	fff00793          	li	a5,-1
+ 790:	00f71663          	bne	a4,a5,79c <_Z21decodeAndSaveS3RecordPc+0x3c>
+ 794:	00100793          	li	a5,1
+ 798:	1680006f          	j	900 <_Z21decodeAndSaveS3RecordPc+0x1a0>
+ 79c:	00400593          	li	a1,4
+ 7a0:	fcc42503          	lw	a0,-52(s0)
+ 7a4:	badff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 7a8:	fea42023          	sw	a0,-32(s0)
+ 7ac:	fe042703          	lw	a4,-32(s0)
+ 7b0:	fff00793          	li	a5,-1
+ 7b4:	00f71663          	bne	a4,a5,7c0 <_Z21decodeAndSaveS3RecordPc+0x60>
+ 7b8:	00100793          	li	a5,1
+ 7bc:	1440006f          	j	900 <_Z21decodeAndSaveS3RecordPc+0x1a0>
+ 7c0:	fe042783          	lw	a5,-32(s0)
+ 7c4:	01879793          	slli	a5,a5,0x18
+ 7c8:	fcf42e23          	sw	a5,-36(s0)
+ 7cc:	00600593          	li	a1,6
+ 7d0:	fcc42503          	lw	a0,-52(s0)
+ 7d4:	b7dff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 7d8:	fea42023          	sw	a0,-32(s0)
+ 7dc:	fe042703          	lw	a4,-32(s0)
+ 7e0:	fff00793          	li	a5,-1
+ 7e4:	00f71663          	bne	a4,a5,7f0 <_Z21decodeAndSaveS3RecordPc+0x90>
+ 7e8:	00100793          	li	a5,1
+ 7ec:	1140006f          	j	900 <_Z21decodeAndSaveS3RecordPc+0x1a0>
+ 7f0:	fe042783          	lw	a5,-32(s0)
+ 7f4:	01079793          	slli	a5,a5,0x10
+ 7f8:	fdc42703          	lw	a4,-36(s0)
+ 7fc:	00f767b3          	or	a5,a4,a5
+ 800:	fcf42e23          	sw	a5,-36(s0)
+ 804:	00800593          	li	a1,8
+ 808:	fcc42503          	lw	a0,-52(s0)
+ 80c:	b45ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 810:	fea42023          	sw	a0,-32(s0)
+ 814:	fe042703          	lw	a4,-32(s0)
+ 818:	fff00793          	li	a5,-1
+ 81c:	00f71663          	bne	a4,a5,828 <_Z21decodeAndSaveS3RecordPc+0xc8>
+ 820:	00100793          	li	a5,1
+ 824:	0dc0006f          	j	900 <_Z21decodeAndSaveS3RecordPc+0x1a0>
+ 828:	fe042783          	lw	a5,-32(s0)
+ 82c:	00879793          	slli	a5,a5,0x8
+ 830:	fdc42703          	lw	a4,-36(s0)
+ 834:	00f767b3          	or	a5,a4,a5
+ 838:	fcf42e23          	sw	a5,-36(s0)
+ 83c:	00a00593          	li	a1,10
+ 840:	fcc42503          	lw	a0,-52(s0)
+ 844:	b0dff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 848:	fea42023          	sw	a0,-32(s0)
+ 84c:	fe042703          	lw	a4,-32(s0)
+ 850:	fff00793          	li	a5,-1
+ 854:	00f71663          	bne	a4,a5,860 <_Z21decodeAndSaveS3RecordPc+0x100>
+ 858:	00100793          	li	a5,1
+ 85c:	0a40006f          	j	900 <_Z21decodeAndSaveS3RecordPc+0x1a0>
+ 860:	fdc42703          	lw	a4,-36(s0)
+ 864:	fe042783          	lw	a5,-32(s0)
+ 868:	00f767b3          	or	a5,a4,a5
+ 86c:	fcf42e23          	sw	a5,-36(s0)
+ 870:	fdc42703          	lw	a4,-36(s0)
+ 874:	000027b7          	lui	a5,0x2
+ 878:	00f75663          	bge	a4,a5,884 <_Z21decodeAndSaveS3RecordPc+0x124>
+ 87c:	00200793          	li	a5,2
+ 880:	0800006f          	j	900 <_Z21decodeAndSaveS3RecordPc+0x1a0>
+ 884:	fe042623          	sw	zero,-20(s0)
+ 888:	fe442783          	lw	a5,-28(s0)
+ 88c:	ffb78793          	addi	a5,a5,-5 # 1ffb <bootEntry+0xd1f>
+ 890:	fec42703          	lw	a4,-20(s0)
+ 894:	06f75463          	bge	a4,a5,8fc <_Z21decodeAndSaveS3RecordPc+0x19c>
+ 898:	fec42783          	lw	a5,-20(s0)
+ 89c:	00678793          	addi	a5,a5,6
+ 8a0:	00179793          	slli	a5,a5,0x1
+ 8a4:	00078593          	mv	a1,a5
+ 8a8:	fcc42503          	lw	a0,-52(s0)
+ 8ac:	aa5ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 8b0:	fea42023          	sw	a0,-32(s0)
+ 8b4:	fe042703          	lw	a4,-32(s0)
+ 8b8:	fff00793          	li	a5,-1
+ 8bc:	00f71663          	bne	a4,a5,8c8 <_Z21decodeAndSaveS3RecordPc+0x168>
+ 8c0:	00100793          	li	a5,1
+ 8c4:	03c0006f          	j	900 <_Z21decodeAndSaveS3RecordPc+0x1a0>
+ 8c8:	fdc42703          	lw	a4,-36(s0)
+ 8cc:	fec42783          	lw	a5,-20(s0)
+ 8d0:	00f707b3          	add	a5,a4,a5
+ 8d4:	00078713          	mv	a4,a5
+ 8d8:	fe842783          	lw	a5,-24(s0)
+ 8dc:	00e787b3          	add	a5,a5,a4
+ 8e0:	fe042703          	lw	a4,-32(s0)
+ 8e4:	0ff77713          	andi	a4,a4,255
+ 8e8:	00e78023          	sb	a4,0(a5)
+ 8ec:	fec42783          	lw	a5,-20(s0)
+ 8f0:	00178793          	addi	a5,a5,1
+ 8f4:	fef42623          	sw	a5,-20(s0)
+ 8f8:	f91ff06f          	j	888 <_Z21decodeAndSaveS3RecordPc+0x128>
+ 8fc:	00000793          	li	a5,0
+ 900:	00078513          	mv	a0,a5
+ 904:	03c12083          	lw	ra,60(sp)
+ 908:	03812403          	lw	s0,56(sp)
+ 90c:	04010113          	addi	sp,sp,64
+ 910:	00008067          	ret
+
+00000914 <_Z24decodeAndExecuteS8RecordPc>:
+ 914:	fd010113          	addi	sp,sp,-48
+ 918:	02112623          	sw	ra,44(sp)
+ 91c:	02812423          	sw	s0,40(sp)
+ 920:	03010413          	addi	s0,sp,48
+ 924:	fca42e23          	sw	a0,-36(s0)
+ 928:	00400593          	li	a1,4
+ 92c:	fdc42503          	lw	a0,-36(s0)
+ 930:	a21ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 934:	fea42623          	sw	a0,-20(s0)
+ 938:	fec42703          	lw	a4,-20(s0)
+ 93c:	fff00793          	li	a5,-1
+ 940:	00f71663          	bne	a4,a5,94c <_Z24decodeAndExecuteS8RecordPc+0x38>
+ 944:	00100793          	li	a5,1
+ 948:	0a40006f          	j	9ec <_Z24decodeAndExecuteS8RecordPc+0xd8>
+ 94c:	fec42783          	lw	a5,-20(s0)
+ 950:	01079793          	slli	a5,a5,0x10
+ 954:	fef42423          	sw	a5,-24(s0)
+ 958:	00600593          	li	a1,6
+ 95c:	fdc42503          	lw	a0,-36(s0)
+ 960:	9f1ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 964:	fea42623          	sw	a0,-20(s0)
+ 968:	fec42703          	lw	a4,-20(s0)
+ 96c:	fff00793          	li	a5,-1
+ 970:	00f71663          	bne	a4,a5,97c <_Z24decodeAndExecuteS8RecordPc+0x68>
+ 974:	00100793          	li	a5,1
+ 978:	0740006f          	j	9ec <_Z24decodeAndExecuteS8RecordPc+0xd8>
+ 97c:	fec42783          	lw	a5,-20(s0)
+ 980:	00879793          	slli	a5,a5,0x8
+ 984:	fe842703          	lw	a4,-24(s0)
+ 988:	00f767b3          	or	a5,a4,a5
+ 98c:	fef42423          	sw	a5,-24(s0)
+ 990:	00800593          	li	a1,8
+ 994:	fdc42503          	lw	a0,-36(s0)
+ 998:	9b9ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ 99c:	fea42623          	sw	a0,-20(s0)
+ 9a0:	fec42703          	lw	a4,-20(s0)
+ 9a4:	fff00793          	li	a5,-1
+ 9a8:	00f71663          	bne	a4,a5,9b4 <_Z24decodeAndExecuteS8RecordPc+0xa0>
+ 9ac:	00100793          	li	a5,1
+ 9b0:	03c0006f          	j	9ec <_Z24decodeAndExecuteS8RecordPc+0xd8>
+ 9b4:	fe842703          	lw	a4,-24(s0)
+ 9b8:	fec42783          	lw	a5,-20(s0)
+ 9bc:	00f767b3          	or	a5,a4,a5
+ 9c0:	fef42423          	sw	a5,-24(s0)
+ 9c4:	000017b7          	lui	a5,0x1
+ 9c8:	f6478513          	addi	a0,a5,-156 # f64 <__data_rom_start>
+ 9cc:	e64ff0ef          	jal	ra,30 <_Z5printPc>
+ 9d0:	fe842703          	lw	a4,-24(s0)
+ 9d4:	000017b7          	lui	a5,0x1
+ 9d8:	2ce7ae23          	sw	a4,732(a5) # 12dc <bootEntry>
+ 9dc:	000017b7          	lui	a5,0x1
+ 9e0:	2dc7a783          	lw	a5,732(a5) # 12dc <bootEntry>
+ 9e4:	000780e7          	jalr	a5
+ 9e8:	00000793          	li	a5,0
+ 9ec:	00078513          	mv	a0,a5
+ 9f0:	02c12083          	lw	ra,44(sp)
+ 9f4:	02812403          	lw	s0,40(sp)
+ 9f8:	03010113          	addi	sp,sp,48
+ 9fc:	00008067          	ret
+
+00000a00 <_Z24decodeAndExecuteS7RecordPc>:
+ a00:	fd010113          	addi	sp,sp,-48
+ a04:	02112623          	sw	ra,44(sp)
+ a08:	02812423          	sw	s0,40(sp)
+ a0c:	03010413          	addi	s0,sp,48
+ a10:	fca42e23          	sw	a0,-36(s0)
+ a14:	00400593          	li	a1,4
+ a18:	fdc42503          	lw	a0,-36(s0)
+ a1c:	935ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ a20:	fea42623          	sw	a0,-20(s0)
+ a24:	fec42703          	lw	a4,-20(s0)
+ a28:	fff00793          	li	a5,-1
+ a2c:	00f71663          	bne	a4,a5,a38 <_Z24decodeAndExecuteS7RecordPc+0x38>
+ a30:	00100793          	li	a5,1
+ a34:	0dc0006f          	j	b10 <_Z24decodeAndExecuteS7RecordPc+0x110>
+ a38:	fec42783          	lw	a5,-20(s0)
+ a3c:	01879793          	slli	a5,a5,0x18
+ a40:	fef42423          	sw	a5,-24(s0)
+ a44:	00600593          	li	a1,6
+ a48:	fdc42503          	lw	a0,-36(s0)
+ a4c:	905ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ a50:	fea42623          	sw	a0,-20(s0)
+ a54:	fec42703          	lw	a4,-20(s0)
+ a58:	fff00793          	li	a5,-1
+ a5c:	00f71663          	bne	a4,a5,a68 <_Z24decodeAndExecuteS7RecordPc+0x68>
+ a60:	00100793          	li	a5,1
+ a64:	0ac0006f          	j	b10 <_Z24decodeAndExecuteS7RecordPc+0x110>
+ a68:	fec42783          	lw	a5,-20(s0)
+ a6c:	01079793          	slli	a5,a5,0x10
+ a70:	fe842703          	lw	a4,-24(s0)
+ a74:	00f767b3          	or	a5,a4,a5
+ a78:	fef42423          	sw	a5,-24(s0)
+ a7c:	00800593          	li	a1,8
+ a80:	fdc42503          	lw	a0,-36(s0)
+ a84:	8cdff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ a88:	fea42623          	sw	a0,-20(s0)
+ a8c:	fec42703          	lw	a4,-20(s0)
+ a90:	fff00793          	li	a5,-1
+ a94:	00f71663          	bne	a4,a5,aa0 <_Z24decodeAndExecuteS7RecordPc+0xa0>
+ a98:	00100793          	li	a5,1
+ a9c:	0740006f          	j	b10 <_Z24decodeAndExecuteS7RecordPc+0x110>
+ aa0:	fec42783          	lw	a5,-20(s0)
+ aa4:	00879793          	slli	a5,a5,0x8
+ aa8:	fe842703          	lw	a4,-24(s0)
+ aac:	00f767b3          	or	a5,a4,a5
+ ab0:	fef42423          	sw	a5,-24(s0)
+ ab4:	00a00593          	li	a1,10
+ ab8:	fdc42503          	lw	a0,-36(s0)
+ abc:	895ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ ac0:	fea42623          	sw	a0,-20(s0)
+ ac4:	fec42703          	lw	a4,-20(s0)
+ ac8:	fff00793          	li	a5,-1
+ acc:	00f71663          	bne	a4,a5,ad8 <_Z24decodeAndExecuteS7RecordPc+0xd8>
+ ad0:	00100793          	li	a5,1
+ ad4:	03c0006f          	j	b10 <_Z24decodeAndExecuteS7RecordPc+0x110>
+ ad8:	fe842703          	lw	a4,-24(s0)
+ adc:	fec42783          	lw	a5,-20(s0)
+ ae0:	00f767b3          	or	a5,a4,a5
+ ae4:	fef42423          	sw	a5,-24(s0)
+ ae8:	000017b7          	lui	a5,0x1
+ aec:	f6478513          	addi	a0,a5,-156 # f64 <__data_rom_start>
+ af0:	d40ff0ef          	jal	ra,30 <_Z5printPc>
+ af4:	fe842703          	lw	a4,-24(s0)
+ af8:	000017b7          	lui	a5,0x1
+ afc:	2ce7ae23          	sw	a4,732(a5) # 12dc <bootEntry>
+ b00:	000017b7          	lui	a5,0x1
+ b04:	2dc7a783          	lw	a5,732(a5) # 12dc <bootEntry>
+ b08:	000780e7          	jalr	a5
+ b0c:	00000793          	li	a5,0
+ b10:	00078513          	mv	a0,a5
+ b14:	02c12083          	lw	ra,44(sp)
+ b18:	02812403          	lw	s0,40(sp)
+ b1c:	03010113          	addi	sp,sp,48
+ b20:	00008067          	ret
+
+00000b24 <_Z24decodeAndExecuteS9RecordPc>:
+ b24:	fd010113          	addi	sp,sp,-48
+ b28:	02112623          	sw	ra,44(sp)
+ b2c:	02812423          	sw	s0,40(sp)
+ b30:	03010413          	addi	s0,sp,48
+ b34:	fca42e23          	sw	a0,-36(s0)
+ b38:	00400593          	li	a1,4
+ b3c:	fdc42503          	lw	a0,-36(s0)
+ b40:	811ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ b44:	fea42623          	sw	a0,-20(s0)
+ b48:	fec42703          	lw	a4,-20(s0)
+ b4c:	fff00793          	li	a5,-1
+ b50:	00f71663          	bne	a4,a5,b5c <_Z24decodeAndExecuteS9RecordPc+0x38>
+ b54:	00100793          	li	a5,1
+ b58:	06c0006f          	j	bc4 <_Z24decodeAndExecuteS9RecordPc+0xa0>
+ b5c:	fec42783          	lw	a5,-20(s0)
+ b60:	00879793          	slli	a5,a5,0x8
+ b64:	fef42423          	sw	a5,-24(s0)
+ b68:	00600593          	li	a1,6
+ b6c:	fdc42503          	lw	a0,-36(s0)
+ b70:	fe0ff0ef          	jal	ra,350 <_Z10hexToIBytePci>
+ b74:	fea42623          	sw	a0,-20(s0)
+ b78:	fec42703          	lw	a4,-20(s0)
+ b7c:	fff00793          	li	a5,-1
+ b80:	00f71663          	bne	a4,a5,b8c <_Z24decodeAndExecuteS9RecordPc+0x68>
+ b84:	00100793          	li	a5,1
+ b88:	03c0006f          	j	bc4 <_Z24decodeAndExecuteS9RecordPc+0xa0>
+ b8c:	fe842703          	lw	a4,-24(s0)
+ b90:	fec42783          	lw	a5,-20(s0)
+ b94:	00f767b3          	or	a5,a4,a5
+ b98:	fef42423          	sw	a5,-24(s0)
+ b9c:	000017b7          	lui	a5,0x1
+ ba0:	f6478513          	addi	a0,a5,-156 # f64 <__data_rom_start>
+ ba4:	c8cff0ef          	jal	ra,30 <_Z5printPc>
+ ba8:	fe842703          	lw	a4,-24(s0)
+ bac:	000017b7          	lui	a5,0x1
+ bb0:	2ce7ae23          	sw	a4,732(a5) # 12dc <bootEntry>
+ bb4:	000017b7          	lui	a5,0x1
+ bb8:	2dc7a783          	lw	a5,732(a5) # 12dc <bootEntry>
+ bbc:	000780e7          	jalr	a5
+ bc0:	00000793          	li	a5,0
+ bc4:	00078513          	mv	a0,a5
+ bc8:	02c12083          	lw	ra,44(sp)
+ bcc:	02812403          	lw	s0,40(sp)
+ bd0:	03010113          	addi	sp,sp,48
+ bd4:	00008067          	ret
+
+00000bd8 <main>:
+ bd8:	fe010113          	addi	sp,sp,-32
+ bdc:	00112e23          	sw	ra,28(sp)
+ be0:	00812c23          	sw	s0,24(sp)
+ be4:	02010413          	addi	s0,sp,32
+ be8:	000017b7          	lui	a5,0x1
+ bec:	00007737          	lui	a4,0x7
+ bf0:	d4070713          	addi	a4,a4,-704 # 6d40 <bootEntry+0x5a64>
+ bf4:	2ce7ac23          	sw	a4,728(a5) # 12d8 <displayRam>
+ bf8:	000017b7          	lui	a5,0x1
+ bfc:	24c7a783          	lw	a5,588(a5) # 124c <bsp>
+ c00:	0007a023          	sw	zero,0(a5)
+ c04:	000017b7          	lui	a5,0x1
+ c08:	2c07aa23          	sw	zero,724(a5) # 12d4 <screenIndex>
+ c0c:	fe042623          	sw	zero,-20(s0)
+ c10:	fec42703          	lw	a4,-20(s0)
+ c14:	4af00793          	li	a5,1199
+ c18:	02e7ca63          	blt	a5,a4,c4c <main+0x74>
+ c1c:	000017b7          	lui	a5,0x1
+ c20:	2d87a703          	lw	a4,728(a5) # 12d8 <displayRam>
+ c24:	fec42783          	lw	a5,-20(s0)
+ c28:	00179793          	slli	a5,a5,0x1
+ c2c:	00f707b3          	add	a5,a4,a5
+ c30:	00001737          	lui	a4,0x1
+ c34:	d0070713          	addi	a4,a4,-768 # d00 <main+0x128>
+ c38:	00e79023          	sh	a4,0(a5)
+ c3c:	fec42783          	lw	a5,-20(s0)
+ c40:	00178793          	addi	a5,a5,1
+ c44:	fef42623          	sw	a5,-20(s0)
+ c48:	fc9ff06f          	j	c10 <main+0x38>
+ c4c:	000017b7          	lui	a5,0x1
+ c50:	f6c78513          	addi	a0,a5,-148 # f6c <__data_rom_start+0x8>
+ c54:	bdcff0ef          	jal	ra,30 <_Z5printPc>
+ c58:	fe042623          	sw	zero,-20(s0)
+ c5c:	fec42703          	lw	a4,-20(s0)
+ c60:	00f00793          	li	a5,15
+ c64:	04e7c463          	blt	a5,a4,cac <main+0xd4>
+ c68:	fec42783          	lw	a5,-20(s0)
+ c6c:	01079713          	slli	a4,a5,0x10
+ c70:	01075713          	srli	a4,a4,0x10
+ c74:	000017b7          	lui	a5,0x1
+ c78:	2d87a683          	lw	a3,728(a5) # 12d8 <displayRam>
+ c7c:	fec42783          	lw	a5,-20(s0)
+ c80:	01878793          	addi	a5,a5,24
+ c84:	00179793          	slli	a5,a5,0x1
+ c88:	00f687b3          	add	a5,a3,a5
+ c8c:	00c71713          	slli	a4,a4,0xc
+ c90:	01071713          	slli	a4,a4,0x10
+ c94:	01075713          	srli	a4,a4,0x10
+ c98:	00e79023          	sh	a4,0(a5)
+ c9c:	fec42783          	lw	a5,-20(s0)
+ ca0:	00178793          	addi	a5,a5,1
+ ca4:	fef42623          	sw	a5,-20(s0)
+ ca8:	fb5ff06f          	j	c5c <main+0x84>
+ cac:	fe042423          	sw	zero,-24(s0)
+ cb0:	fff00793          	li	a5,-1
+ cb4:	fef42223          	sw	a5,-28(s0)
+ cb8:	000017b7          	lui	a5,0x1
+ cbc:	0c800713          	li	a4,200
+ cc0:	2ce7aa23          	sw	a4,724(a5) # 12d4 <screenIndex>
+ cc4:	fe042623          	sw	zero,-20(s0)
+ cc8:	fec42703          	lw	a4,-20(s0)
+ ccc:	02700793          	li	a5,39
+ cd0:	06e7cc63          	blt	a5,a4,d48 <main+0x170>
+ cd4:	fe842703          	lw	a4,-24(s0)
+ cd8:	02700793          	li	a5,39
+ cdc:	02e7c863          	blt	a5,a4,d0c <main+0x134>
+ ce0:	fec42703          	lw	a4,-20(s0)
+ ce4:	fe842783          	lw	a5,-24(s0)
+ ce8:	00e7ca63          	blt	a5,a4,cfc <main+0x124>
+ cec:	000017b7          	lui	a5,0x1
+ cf0:	fa078513          	addi	a0,a5,-96 # fa0 <__data_rom_start+0x3c>
+ cf4:	b3cff0ef          	jal	ra,30 <_Z5printPc>
+ cf8:	0400006f          	j	d38 <main+0x160>
+ cfc:	000017b7          	lui	a5,0x1
+ d00:	fa478513          	addi	a0,a5,-92 # fa4 <__data_rom_start+0x40>
+ d04:	b2cff0ef          	jal	ra,30 <_Z5printPc>
+ d08:	0300006f          	j	d38 <main+0x160>
+ d0c:	fe842783          	lw	a5,-24(s0)
+ d10:	fd978793          	addi	a5,a5,-39
+ d14:	fec42703          	lw	a4,-20(s0)
+ d18:	00f75a63          	bge	a4,a5,d2c <main+0x154>
+ d1c:	000017b7          	lui	a5,0x1
+ d20:	fa478513          	addi	a0,a5,-92 # fa4 <__data_rom_start+0x40>
+ d24:	b0cff0ef          	jal	ra,30 <_Z5printPc>
+ d28:	0100006f          	j	d38 <main+0x160>
+ d2c:	000017b7          	lui	a5,0x1
+ d30:	fa078513          	addi	a0,a5,-96 # fa0 <__data_rom_start+0x3c>
+ d34:	afcff0ef          	jal	ra,30 <_Z5printPc>
+ d38:	fec42783          	lw	a5,-20(s0)
+ d3c:	00178793          	addi	a5,a5,1
+ d40:	fef42623          	sw	a5,-20(s0)
+ d44:	f85ff06f          	j	cc8 <main+0xf0>
+ d48:	fe842783          	lw	a5,-24(s0)
+ d4c:	00178793          	addi	a5,a5,1
+ d50:	fef42423          	sw	a5,-24(s0)
+ d54:	fe842703          	lw	a4,-24(s0)
+ d58:	04f00793          	li	a5,79
+ d5c:	00e7d463          	bge	a5,a4,d64 <main+0x18c>
+ d60:	fe042423          	sw	zero,-24(s0)
+ d64:	fe042023          	sw	zero,-32(s0)
+ d68:	fe042703          	lw	a4,-32(s0)
+ d6c:	000187b7          	lui	a5,0x18
+ d70:	6a078793          	addi	a5,a5,1696 # 186a0 <bootEntry+0x173c4>
+ d74:	00f727b3          	slt	a5,a4,a5
+ d78:	0ff7f793          	andi	a5,a5,255
+ d7c:	02078663          	beqz	a5,da8 <main+0x1d0>
+ d80:	bc8ff0ef          	jal	ra,148 <_Z8uartGetCv>
+ d84:	fea42223          	sw	a0,-28(s0)
+ d88:	fe442703          	lw	a4,-28(s0)
+ d8c:	05300793          	li	a5,83
+ d90:	00f70a63          	beq	a4,a5,da4 <main+0x1cc>
+ d94:	fe042783          	lw	a5,-32(s0)
+ d98:	00178793          	addi	a5,a5,1
+ d9c:	fef42023          	sw	a5,-32(s0)
+ da0:	fc9ff06f          	j	d68 <main+0x190>
+ da4:	00000013          	nop
+ da8:	fe442703          	lw	a4,-28(s0)
+ dac:	05300793          	li	a5,83
+ db0:	00f70463          	beq	a4,a5,db8 <main+0x1e0>
+ db4:	f05ff06f          	j	cb8 <main+0xe0>
+ db8:	000017b7          	lui	a5,0x1
+ dbc:	fa878513          	addi	a0,a5,-88 # fa8 <__data_rom_start+0x44>
+ dc0:	a70ff0ef          	jal	ra,30 <_Z5printPc>
+ dc4:	08000593          	li	a1,128
+ dc8:	000017b7          	lui	a5,0x1
+ dcc:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ dd0:	c1cff0ef          	jal	ra,1ec <_Z8uartGetSPci>
+ dd4:	000017b7          	lui	a5,0x1
+ dd8:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ ddc:	e04ff0ef          	jal	ra,3e0 <_Z24decodeAndDisplayS0RecordPc>
+ de0:	00050793          	mv	a5,a0
+ de4:	0017b793          	seqz	a5,a5
+ de8:	0ff7f793          	andi	a5,a5,255
+ dec:	00078e63          	beqz	a5,e08 <main+0x230>
+ df0:	02a00513          	li	a0,42
+ df4:	ba0ff0ef          	jal	ra,194 <_Z8uartPutCh>
+ df8:	000017b7          	lui	a5,0x1
+ dfc:	fcc78513          	addi	a0,a5,-52 # fcc <__data_rom_start+0x68>
+ e00:	a30ff0ef          	jal	ra,30 <_Z5printPc>
+ e04:	01c0006f          	j	e20 <main+0x248>
+ e08:	02100513          	li	a0,33
+ e0c:	b88ff0ef          	jal	ra,194 <_Z8uartPutCh>
+ e10:	000017b7          	lui	a5,0x1
+ e14:	fb478513          	addi	a0,a5,-76 # fb4 <__data_rom_start+0x50>
+ e18:	a18ff0ef          	jal	ra,30 <_Z5printPc>
+ e1c:	0000006f          	j	e1c <main+0x244>
+ e20:	08000593          	li	a1,128
+ e24:	000017b7          	lui	a5,0x1
+ e28:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ e2c:	bc0ff0ef          	jal	ra,1ec <_Z8uartGetSPci>
+ e30:	000017b7          	lui	a5,0x1
+ e34:	2547c703          	lbu	a4,596(a5) # 1254 <buf>
+ e38:	05300793          	li	a5,83
+ e3c:	fef712e3          	bne	a4,a5,e20 <main+0x248>
+ e40:	fe042423          	sw	zero,-24(s0)
+ e44:	000017b7          	lui	a5,0x1
+ e48:	25478793          	addi	a5,a5,596 # 1254 <buf>
+ e4c:	0017c783          	lbu	a5,1(a5)
+ e50:	fd078793          	addi	a5,a5,-48
+ e54:	00900713          	li	a4,9
+ e58:	0af76463          	bltu	a4,a5,f00 <main+0x328>
+ e5c:	00279713          	slli	a4,a5,0x2
+ e60:	000017b7          	lui	a5,0x1
+ e64:	ffc78793          	addi	a5,a5,-4 # ffc <__data_rom_start+0x98>
+ e68:	00f707b3          	add	a5,a4,a5
+ e6c:	0007a783          	lw	a5,0(a5)
+ e70:	00078067          	jr	a5
+ e74:	000017b7          	lui	a5,0x1
+ e78:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ e7c:	e24ff0ef          	jal	ra,4a0 <_Z21decodeAndSaveS1RecordPc>
+ e80:	fea42423          	sw	a0,-24(s0)
+ e84:	0880006f          	j	f0c <main+0x334>
+ e88:	000017b7          	lui	a5,0x1
+ e8c:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ e90:	f54ff0ef          	jal	ra,5e4 <_Z21decodeAndSaveS2RecordPc>
+ e94:	fea42423          	sw	a0,-24(s0)
+ e98:	0740006f          	j	f0c <main+0x334>
+ e9c:	000017b7          	lui	a5,0x1
+ ea0:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ ea4:	8bdff0ef          	jal	ra,760 <_Z21decodeAndSaveS3RecordPc>
+ ea8:	fea42423          	sw	a0,-24(s0)
+ eac:	0600006f          	j	f0c <main+0x334>
+ eb0:	fe042423          	sw	zero,-24(s0)
+ eb4:	0580006f          	j	f0c <main+0x334>
+ eb8:	000017b7          	lui	a5,0x1
+ ebc:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ ec0:	b41ff0ef          	jal	ra,a00 <_Z24decodeAndExecuteS7RecordPc>
+ ec4:	00050793          	mv	a5,a0
+ ec8:	fef42423          	sw	a5,-24(s0)
+ ecc:	0400006f          	j	f0c <main+0x334>
+ ed0:	000017b7          	lui	a5,0x1
+ ed4:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ ed8:	a3dff0ef          	jal	ra,914 <_Z24decodeAndExecuteS8RecordPc>
+ edc:	00050793          	mv	a5,a0
+ ee0:	fef42423          	sw	a5,-24(s0)
+ ee4:	0280006f          	j	f0c <main+0x334>
+ ee8:	000017b7          	lui	a5,0x1
+ eec:	25478513          	addi	a0,a5,596 # 1254 <buf>
+ ef0:	c35ff0ef          	jal	ra,b24 <_Z24decodeAndExecuteS9RecordPc>
+ ef4:	00050793          	mv	a5,a0
+ ef8:	fef42423          	sw	a5,-24(s0)
+ efc:	0100006f          	j	f0c <main+0x334>
+ f00:	00200793          	li	a5,2
+ f04:	fef42423          	sw	a5,-24(s0)
+ f08:	0000006f          	j	f08 <main+0x330>
+ f0c:	fe842783          	lw	a5,-24(s0)
+ f10:	00078a63          	beqz	a5,f24 <main+0x34c>
+ f14:	fe842703          	lw	a4,-24(s0)
+ f18:	00100793          	li	a5,1
+ f1c:	00f70a63          	beq	a4,a5,f30 <main+0x358>
+ f20:	0280006f          	j	f48 <main+0x370>
+ f24:	02a00513          	li	a0,42
+ f28:	a6cff0ef          	jal	ra,194 <_Z8uartPutCh>
+ f2c:	0340006f          	j	f60 <main+0x388>
+ f30:	000017b7          	lui	a5,0x1
+ f34:	fd078513          	addi	a0,a5,-48 # fd0 <__data_rom_start+0x6c>
+ f38:	8f8ff0ef          	jal	ra,30 <_Z5printPc>
+ f3c:	07200513          	li	a0,114
+ f40:	a54ff0ef          	jal	ra,194 <_Z8uartPutCh>
+ f44:	01c0006f          	j	f60 <main+0x388>
+ f48:	000017b7          	lui	a5,0x1
+ f4c:	fd478513          	addi	a0,a5,-44 # fd4 <__data_rom_start+0x70>
+ f50:	8e0ff0ef          	jal	ra,30 <_Z5printPc>
+ f54:	02100513          	li	a0,33
+ f58:	a3cff0ef          	jal	ra,194 <_Z8uartPutCh>
+ f5c:	0000006f          	j	f5c <main+0x384>
+ f60:	ec1ff06f          	j	e20 <main+0x248>
