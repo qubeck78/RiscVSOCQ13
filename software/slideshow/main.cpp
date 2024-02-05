@@ -18,12 +18,12 @@
 
 extern BSP_T        *bsp;
 
-extern  FATFS        fatfs;          // File system object defined in osFile.cpp
+//extern  FATFS        fatfs;          // File system object defined in osFile.cpp
 
-FRESULT              rc;             /* Result code */
-FIL                  fil;            /* File object */
-DIR                  dir;            /* Directory object */
-FILINFO              fno;            /* File information object */ 
+//FRESULT              rc;             /* Result code */
+//FIL                  fil;            /* File object */
+//DIR                  dir;            /* Directory object */
+//FILINFO              fno;            /* File information object */ 
 
 
 extern tgfTextOverlay        con;
@@ -34,6 +34,9 @@ tgfBitmap            fileBmp;
 
 char buf[128];
 char lfnBuf[ 512 + 16];
+
+tosDir              dir;
+tosDirItem          dirItem;
 
 int animLeds( int j )
 {   
@@ -88,65 +91,54 @@ int slideshow()
     
     do{
         
-        rc = f_opendir(&dir, "0:img");
-        
-    
+        #ifdef _GFXLIB_SDL
+
+        rv = osDirOpen( &dir, (char*)"./img" );
+
+        #else
+
+        rv = osDirOpen( &dir, (char*)"0:img" );
+
+        #endif
+
         do
         {
-            lfnBuf[0] = 0;
+            rv = osDirRead( &dir, &dirItem );
 
-            fno.lfname = &lfnBuf[0];
-            fno.lfsize = 512;       
-        
-            rc = f_readdir(&dir, &fno);     // Read a directory item
-            
-            if( rc || !fno.fname[0] ) 
+            if( rv ) 
             {
                 break; // Error or end of dir
             }
+
             
-            if (fno.fattrib & AM_DIR)
-            {
-                /* toPrint( &con, (char*)"<dir> " );
-                toPrint( &con, (char*)fno.fname );
-                toPrint( &con, (char*)"\n" );
-                
-                //printf("   <dir>  %s\n", fno.fname);
-                */
-            }else
+            if ( dirItem.type != OS_DIRITEM_DIR )
             {
 
-                i = strlen( fno.fname );
+                i = strlen( dirItem.name );
             
                 if( i >= 4 )
                 {
-                    extension[0] = fno.fname[ i - 4 ];
-                    extension[1] = fno.fname[ i - 3 ];
-                    extension[2] = fno.fname[ i - 2 ];
-                    extension[3] = fno.fname[ i - 1 ];
+                    extension[0] = dirItem.name[ i - 4 ];
+                    extension[1] = dirItem.name[ i - 3 ];
+                    extension[2] = dirItem.name[ i - 2 ];
+                    extension[3] = dirItem.name[ i - 1 ];
                     extension[4] = 0;
                     
-                    if( ( strcmp( extension, ".JPG" ) == 0 ) || ( strcmp( extension, ".GBM" ) == 0 ) )
+                    if( ( strcmp( extension, ".jpg" ) == 0 ) || ( strcmp( extension, ".gbm" ) == 0 ) )
                     {
                     
                         animLeds( led++ );
                         
-                        strcpy( buf, "0:img/" );
-                        strcat( buf, fno.fname );
+                        strcpy( buf, "img/" );
+                        strcat( buf, dirItem.name );
 
                         con.textAttributes = 0x0f;
                         toCls( &con );
                         con.textAttributes  = 0x8f;
 
-                        if( lfnBuf[0] != 0 )
-                        {
-                            toPrintF( &con, (char*)"Loading:%s", fno.lfname);
-                        }
-                        else
-                        {
-                            toPrintF( &con, (char*)"Loading:%s", fno.fname);                        
-                        }
-                        if( fno.fname[ i - 3 ] == 'G' )
+                        toPrintF( &con, (char*)"Loading:%s", dirItem.name );
+
+                        if( dirItem.name[ i - 3 ] == 'g' )
                         {
                             gfLoadBitmapFS( &fileBmp, buf );
                         }
@@ -185,21 +177,12 @@ int slideshow()
                         toCls( &con );
                         con.textAttributes      = 0x8f;
                         
-                        if( lfnBuf[0] != 0 )
-                        {
-                            toPrintF( &con, (char*)"%s %d\n", fno.lfname, fno.fsize );
-                        }
-                        else
-                        {
-                            toPrintF( &con, (char*)"%s %d\n", fno.fname, fno.fsize );                       
-                        }
+                        toPrintF( &con, (char*)"%s %d\n", dirItem.name, dirItem.size );
                         
                         for( i = 0; i < 100; i++ )
                         {
                             delayMs( 100 );
-                            
-                            usbHIDHandleEvents();
-                
+                                            
                             if( !osGetUIEvent( &event ) )
                             { 
                                 if( event.type == OS_EVENT_TYPE_KEYBOARD_KEYPRESS )
@@ -261,6 +244,8 @@ int slideshow()
             
         }while( 1 );
     
+        osDirClose( &dir );
+
     }while( 1 );
 
 }
@@ -316,18 +301,6 @@ int main()
 
     gfFillRect( &screen, 0, 0, screen.width - 1, screen.height - 1 , gfColor( 0, 0, 0 ) ); 
     
-    //init usb HID stack
-    rv = usbHIDInit();
-    
-    if( rv )
-    {
-        toPrint( &con, ( char* )"USB HID init error\n" );
-        
-        rv = 1;
-        return rv;
-
-    }
-
     //init events queue
     osUIEventsInit();  
 

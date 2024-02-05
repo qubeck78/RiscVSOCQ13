@@ -1,12 +1,19 @@
 
 #include "osFile.h"
 
+#ifdef _GFXLIB_SDL
+
+#include <cstring>
+#include <sys/stat.h>
+
+#endif
+
 
 #ifdef _GFXLIB_RISCV_FATFS
 
 #include "bsp.h"
 
-FATFS             fatfs;            /* File system object */
+FATFS             fatfs;
 
 #endif
 
@@ -15,6 +22,13 @@ FATFS             fatfs;            /* File system object */
 static FILINFO    finfo;
 
 #endif
+
+#ifdef _GFXLIB_SDL
+
+static struct stat fsStat;
+
+#endif
+
 
 ulong osFInit( void )
 {
@@ -55,7 +69,7 @@ ulong osFInit( void )
 
    #else
    
-      return 1;   //not implemented
+      return 0;   
 
    #endif
 }
@@ -433,4 +447,236 @@ ulong osFGetS( tosFile *file, uchar *buffer, ulong maxLength )
 
 
    return rv;
+}
+
+ulong osDirOpen( tosDir *dir, char *path )
+{
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+
+   FRESULT    rc;             
+
+   #endif
+
+   if( dir == NULL )
+   {
+      return 1;
+   }
+
+
+   #ifdef _GFXLIB_SDL
+
+   strcpy( dir->dirPath, "" );
+
+   dir->dd = opendir( path );
+
+   if( dir->dd != NULL )
+   {
+      strncpy( dir->dirPath, path, sizeof( dir->dirPath ) - 1 );
+
+      return 0;
+   }
+   else
+   {
+      return 1;
+   }
+
+   #endif
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+
+   rc = f_opendir( &dir->dd, path );
+
+   if( rc == FR_OK )
+   {
+      return 0;
+   }
+   else
+   {
+      return 1;
+   }
+
+   #endif
+
+
+   return 1;
+}
+
+ulong osDirClose( tosDir *dir )
+{
+
+   if( dir == NULL )
+   {
+      return 1;
+   }
+
+   #ifdef _GFXLIB_SDL
+
+   if( dir->dd == NULL )
+   {
+      return 1;
+   }
+
+   closedir( dir->dd );
+
+   return 0;
+
+   #endif
+
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+
+   return 0;
+
+   #endif
+
+
+   return 1;
+
+
+}
+
+ulong osDirRead( tosDir *dir, tosDirItem *dirItem )
+{
+   #ifdef _GFXLIB_SDL
+
+   struct dirent  *de;
+   char            statPath[512];
+   bool            readNextItem;
+
+   #endif
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+   
+   FRESULT         rc;
+
+   #endif
+
+
+   if( dirItem == NULL )
+   {
+      return 1;
+   }
+
+   if( dir == NULL )
+   {      
+      return 1;
+   }
+
+   #ifdef _GFXLIB_SDL
+
+   if( dir->dd == NULL )
+   {
+
+      return 1;
+   }
+
+
+
+   do
+   {
+      de = readdir( dir->dd );
+
+      readNextItem = false;
+
+      if( de != NULL )
+      {
+         if( !strcmp( de->d_name, "." ) )
+         {
+            readNextItem = true;
+         }
+         if( !strcmp( de->d_name, ".." ) )
+         {
+            readNextItem = true;
+         }
+      }
+
+   }while( readNextItem );
+   
+   if( de != NULL )
+   {
+      strcpy( dirItem->name, de->d_name );
+
+      strcpy( statPath, dir->dirPath );
+      strcat( statPath, "/" );
+      strcat( statPath, de->d_name );
+
+      stat( statPath, &fsStat );
+
+      if( fsStat.st_mode & S_IFDIR )
+      {
+         dirItem->type = OS_DIRITEM_DIR;
+      }
+      else
+      {
+         dirItem->type = OS_DIRITEM_FILE;
+      }
+
+      dirItem->size  = fsStat.st_size;
+
+
+      return 0;
+   }
+   else
+   {
+      strcpy( dirItem->name, "" );
+      dirItem->type  = OS_DIRITEM_NONE;
+      dirItem->size  = 0;
+
+      return 2;
+   }
+
+   return 0;
+
+   #endif
+
+   #if defined( _GFXLIB_STM32_FATFS ) || defined( _GFXLIB_MC68K_FATFS ) || defined( _GFXLIB_RISCV_FATFS )
+
+   finfo.lfname = dirItem->name;
+   finfo.lfsize = 255;
+
+   //clear long file name
+   dirItem->name[0] = 0;
+
+   rc = f_readdir( &dir->dd, &finfo );
+
+   if( rc != FR_OK )
+   {
+      strcpy( dirItem->name, "" );
+      dirItem->type  = OS_DIRITEM_NONE;
+      dirItem->size  = 0;
+
+      return 2;
+   }
+
+   if( finfo.fattrib & AM_DIR )
+   {
+      dirItem->type  = OS_DIRITEM_DIR;
+      dirItem->size  = 0;
+   }
+   else
+   {
+      dirItem->type  = OS_DIRITEM_FILE;
+      dirItem->size  = finfo.fsize;
+   }
+
+   //check if short file name
+   if( dirItem->name[0] == 0 )
+   {
+      strcpy( dirItem->name, finfo.fname );
+
+   }
+   
+   if( dirItem->name[0] != 0 )
+   {
+      return 0;
+   }
+   else
+   {
+      return 1;
+   }
+
+   #endif
+//finfo
+
 }

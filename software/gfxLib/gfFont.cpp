@@ -585,7 +585,7 @@ ulong toScrollUp( tgfTextOverlay *overlay )
 
 ulong toPrint( tgfTextOverlay *overlay, char *string )
 {
-	char    c;
+	uchar	c;
 	ulong   idx;
 
 	if( !overlay )

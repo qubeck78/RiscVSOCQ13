@@ -4,20 +4,27 @@
 #include "osFile.h"
 
 
-#if defined ( _GFXLIB_RISCV_FATFS )
+#if defined( _GFXLIB_RISCV_FATFS ) || defined( _GFXLIB_SDL )
 
 #include "bsp.h"
-
-//debug
-//#include "gfFont.h"
-//extern tgfTextOverlay	con;
-
 
 #endif
 
 ulong gfDisplayBitmap( tgfBitmap *bmp )
 {
+	
+	#if defined( _GFXLIB_RISCV_FATFS )
+	
 	bsp->dmaDisplayPointerStart = ( ulong )( ( ulong )bmp->buffer - _SYSTEM_MEMORY_BASE ) / 4; 
+	
+	#endif
+
+	#if defined( _GFXLIB_SDL )
+
+	bsp->dmaDisplayPointerStart = bmp->buffer;
+
+	#endif
+
 
 	return 0;
 }

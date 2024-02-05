@@ -1,11 +1,21 @@
 #include "osUIEvents.h"
 
+#ifdef _GFXLIB_RISCV_FATFS
+
+#include "usbHID.h"
+
+#endif
+
 
 volatile tosUIEventQueue osUIEventQueue;
 
 
 ulong osUIEventsInit()
 {
+	ulong rv;
+
+	rv = 0;
+
 	osUIEventQueue.lock 		= 1;
 
 	osUIEventQueue.wrIdx 		= 0;
@@ -14,7 +24,14 @@ ulong osUIEventsInit()
 
 	osUIEventQueue.lock 		= 0;
 
-	return 0;
+	#ifdef _GFXLIB_RISCV_FATFS
+
+	rv = usbHIDInit();
+
+	#endif
+
+
+	return rv;
 }
 
 //Store event into queue
@@ -25,10 +42,6 @@ ulong osPutUIEvent( tosUIEvent *event )
 		return 1;
 	}
 
-	if( osUIEventQueue.lock )
-	{
-		return 2;
-	}
 
 	osUIEventQueue.lock = 1;
 
@@ -68,6 +81,15 @@ ulong osPutUIEvent( tosUIEvent *event )
 //Get event from queue
 ulong osGetUIEvent( tosUIEvent *event )
 {
+
+	#ifdef _GFXLIB_RISCV_FATFS
+
+	//poll USB HID
+
+	usbHIDHandleEvents();
+
+	#endif
+
 
 	if( !event )
 	{

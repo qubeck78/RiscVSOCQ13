@@ -16,14 +16,6 @@
 #include "../gfxLib/ff.h" 
 
 
-extern	FATFS			 fatfs;			//fs object defined in osFile.cpp
-
-FRESULT 			 	 rc;             /* Result code */
-FIL 				 	 fil;                /* File object */
-DIR 				 	 dir;                /* Directory object */
-FILINFO 			 	 fno;            /* File information object */ 
-
-
 extern tgfTextOverlay	 con;
 
 tgfBitmap 			 	 screen1;
@@ -129,18 +121,6 @@ ulong init()
 	gfFillRect( &screen2, 0, 0, screen2.width - 1, screen2.height - 1 , gfColor( 0, 0, 0 ) ); 
 	
 	con.textAttributes = 0x8f;
-
-	//init usb HID stack
-	rv = usbHIDInit();
-	
-	if( rv )
-	{
-		toPrint( &con, ( char* )"USB HID init error\n" );
-		
-		rv = 1;
-		return rv;
-
-	}
 
 	//init events queue
 	osUIEventsInit();   
@@ -295,8 +275,6 @@ int main()
 		
 		anim( &screen2 );		
 		moveAsteroids();
-
-		usbHIDHandleEvents();
 		
 		if( !osGetUIEvent( &event ) )
 		{ 

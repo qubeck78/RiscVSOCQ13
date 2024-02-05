@@ -15,7 +15,6 @@
 #include "../gfxLib/usbHID.h"
 #include "../gfxLib/ff.h" 
 
-extern	FATFS			fatfs;			//fs object defined in osFile.cpp
 extern	tgfTextOverlay	con;
 
 tgfBitmap 			 	screen;
@@ -229,8 +228,6 @@ int init()
   //clear screen buffer
   gfFillRect( &screen2, 0, 0, screen2.width - 1, screen2.height - 1 , gfColor( 0, 0, 0 ) ); 
 
-	//init usb HID stack
-	rv = usbHIDInit();
 	
 	if( rv )
 	{
@@ -855,11 +852,7 @@ float oldPlaneX;
 
     step++;
 
-
-
-
-		usbHIDHandleEvents();
-		
+	
 		if( !osGetUIEvent( &event ) )
 		{
 

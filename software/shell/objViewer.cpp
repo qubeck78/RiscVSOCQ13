@@ -490,6 +490,7 @@ int objvDisplayObj( tgfBitmap *pscr )
 	tgfTriangle3D	*triangle;
 
 	
+	#ifdef _GFXLIB_HW_BLITTER_2D
 	//copy background to screen buffer
 
 	blt->bltConfig0			= 0x2001;	//32 bit copy
@@ -510,6 +511,17 @@ int objvDisplayObj( tgfBitmap *pscr )
 	//wait for blitter to complete operation
 	do{}while( ! ( blt->bltStatus & 1 ) );
 
+	#else
+
+	gfBlitBitmap( pscr, &background, 0, 0 );
+
+	//calc point cloud
+	objvCalc3d( pscr );
+
+	#endif
+
+
+	#ifdef _GFXLIB_HW_BLITTER_2D
 
 	//clear zbuffer
 
@@ -525,6 +537,11 @@ int objvDisplayObj( tgfBitmap *pscr )
 
 	do{}while( ! ( blt->bltStatus & 1 ) );
 
+	#else
+
+	gfFillRect( &zBuffer, 0, 0, 319, 239, 0xffff );
+
+	#endif
 
 	//draw scene
 
@@ -533,6 +550,7 @@ int objvDisplayObj( tgfBitmap *pscr )
 		
 		case 0:
 
+			#ifdef _GFXLIB_HW_BLITTER_2D
 
 			//bounding box calculated in hw
 
@@ -546,7 +564,6 @@ int objvDisplayObj( tgfBitmap *pscr )
 			for( i = 0 ; i < numTriangles; i++ )
 			{
 
-//				gfGouraudDrawTexturedTriangleZBufferBlt( pscr, &zBuffer, &triangles[i] );
 
 				triangle = &triangles[i];
 
@@ -607,6 +624,8 @@ int objvDisplayObj( tgfBitmap *pscr )
 			}
 			//wait until last blit complete
 			do{}while( ! ( blt->bltStatus & 1 ) );
+
+			#endif
 			
 			break;
 
@@ -719,7 +738,14 @@ int objvView( char* fileName )
  	
  	if( rv )
  	{
+ 		#ifdef _GFXLIB_RISCV_FATFS
 		gfLoadBitmapFS( &texture, (char*) "0:/obj/deftexture.gbm" ); 
+		#endif
+		#ifdef _GFXLIB_SDL
+		gfLoadBitmapFS( &texture, (char*) "deftexture.gbm" ); 
+		#endif
+
+
 	}
 
 	
@@ -752,7 +778,12 @@ int objvView( char* fileName )
 
 
 	exitMainLoop = 0;
+
+	#ifdef _GFXLIB_HW_BLITTER_2D
 	rendererType = 0;
+	#else
+	rendererType = 2;
+	#endif
 
 	do
 	{
@@ -770,7 +801,6 @@ int objvView( char* fileName )
 		rotation = bsp->frameTimer;
 		objvDisplayObj( &screen2 );	 
 
-		usbHIDHandleEvents();
 		
 		if( !osGetUIEvent( &event ) )
 		{
@@ -816,7 +846,7 @@ int objvView( char* fileName )
 
 
 	osFree( (void*)points );
-	osFree( (void*)numTriangles );
+	osFree( (void*)triangles );
 	osFree( (void*)texture.buffer );
 
 	numPoints 		= 0;

@@ -13,8 +13,6 @@
 #include "../gfxLib/osUIEvents.h"
 #include "../gfxLib/usbHID.h"
 
-#include "../gfxLib/diskio.h"
-#include "../gfxLib/ff.h"  
 
 
 
